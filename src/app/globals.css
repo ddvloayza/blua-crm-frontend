@@ -6,6 +6,7 @@
   --crm-paper: #f8f9fc;
   --crm-surface: #ffffff;
   --crm-blue: #4a63e7;
+  --crm-blue-soft: #e2e8ff;
   --crm-blue-deep: #023373;
   --crm-green: #34d399;
   --crm-green-soft: #d1fae5;
@@ -21,7 +22,7 @@ button:disabled { cursor: not-allowed; }
 
 .crm-app { min-height: 100vh; background: var(--crm-paper); color: var(--crm-ink); }
 .crm-panel { border: 1px solid var(--crm-ink); background: var(--crm-surface); }
-.crm-panel, .crm-signin-hero { transform: perspective(900px) translate3d(0, 0, 0) rotateX(0) rotateY(0); transition: transform .24s cubic-bezier(.2, .7, .2, 1), box-shadow .24s ease; }
+.crm-panel, .crm-signin-hero { transition: transform .2s cubic-bezier(.2, .7, .2, 1), box-shadow .2s ease, background-color .2s ease; }
 .crm-kicker { color: var(--crm-blue); font-family: "Courier New", Courier, monospace; font-size: 11px; font-weight: 700; letter-spacing: .09em; line-height: 1.4; }
 .crm-kicker-light { color: #dfe6ff; }
 .crm-title { color: var(--crm-ink); font-size: clamp(2rem, 3vw, 3.5rem); font-weight: 400; letter-spacing: -.045em; line-height: 1.05; text-transform: uppercase; }
@@ -45,9 +46,10 @@ button:disabled { cursor: not-allowed; }
 
 @media (hover: hover) {
   .crm-panel:hover, .crm-signin-hero:hover {
-    transform: perspective(900px) translate3d(0, -5px, 12px) rotateX(1.5deg) rotateY(-1.5deg);
-    box-shadow: 0 14px 24px rgba(2, 51, 115, .16);
+    transform: translate3d(6px, -6px, 0);
+    box-shadow: -12px 12px 0 var(--crm-ink);
   }
+  .crm-panel:hover { background-color: var(--crm-blue-soft); }
 }
 
 @media (prefers-reduced-motion: reduce) {
