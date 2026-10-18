@@ -32,6 +32,7 @@ export default function CrmLeadDetailPage() {
   const [channel, setChannel] = useState("WHATSAPP");
   const [outcome, setOutcome] = useState("INTERESTED");
   const [summary, setSummary] = useState("");
+  const [nextAction, setNextAction] = useState("");
   const [details, setDetails] = useState("");
   const [transcript, setTranscript] = useState("");
   const [interactionFile, setInteractionFile] = useState<File | null>(null);
@@ -82,6 +83,7 @@ export default function CrmLeadDetailPage() {
         interactionType: channel,
         outcome,
         summary: summary.trim(),
+        nextAction: nextAction.trim(),
         details: details.trim(),
         transcriptText: transcript.trim(),
         nextFollowupAt: followup ? new Date(followup).toISOString() : null,
@@ -97,7 +99,7 @@ export default function CrmLeadDetailPage() {
       }
       try { setLead(await getCrmLead(lead.uuid)); }
       catch { uploadWarning = [uploadWarning, "Actualiza la ficha para ver la gestión nueva."].filter(Boolean).join(" "); }
-      setSummary(""); setDetails(""); setTranscript(""); setInteractionFile(null); setFollowup(""); setStatus("");
+      setSummary(""); setNextAction(""); setDetails(""); setTranscript(""); setInteractionFile(null); setFollowup(""); setStatus("");
       setNotice(uploadWarning || "Gestión guardada correctamente.");
       setNoticeWarning(Boolean(uploadWarning));
       setActiveModal(null);
@@ -220,11 +222,14 @@ export default function CrmLeadDetailPage() {
               {item.details && <p className="mt-2 whitespace-pre-wrap text-sm text-slate-600">{item.details}</p>}
               {item.transcriptText && <details className="mt-2 border border-[#d1d5db] bg-[#f8f9fc] p-3 text-xs text-slate-600"><summary className="cursor-pointer font-semibold">Transcripción importada</summary><p className="mt-2 whitespace-pre-wrap">{item.transcriptText}</p></details>}
               {item.attachments?.map((file) => <a key={file.uuid} href={crmAttachmentUrl(file.uuid)} className="mt-2 block text-xs font-semibold text-[#111111]">Descargar {file.filename}</a>)}
+              {item.nextAction && <div className="mt-2 text-xs font-semibold text-[#023373]">Siguiente acción: {item.nextAction}</div>}
               {item.nextFollowupAt && <div className="mt-2 flex items-center gap-1 text-xs text-[#111111]"><CalendarClock size={14} /> Seguimiento: {formatCrmDate(item.nextFollowupAt, true)}</div>}
             </div>)}
             {!lead.interactions?.length && <p className="text-sm text-slate-500">Aún no hay gestiones registradas.</p>}
           </div>
         </section>
+
+        <section className="crm-panel p-6"><h2 className="crm-section-title">Historial del funnel</h2><div className="mt-4 space-y-3">{lead.statusHistory?.map((event, index) => <div key={`${event.changedAt}-${index}`} className="border-l-2 border-[#4A63E7] pl-4 text-sm"><div className="font-semibold">{CRM_STATUS_LABELS[event.status] || event.status}</div><div className="text-xs text-slate-500">{event.isBaseline ? "Estado al iniciar el historial" : `Desde ${CRM_STATUS_LABELS[event.previousStatus] || event.previousStatus}`} · {formatCrmDate(event.changedAt, true)}{event.advisorEmail ? ` · ${event.advisorEmail}` : ""}</div></div>)}{!lead.statusHistory?.length && <p className="text-sm text-slate-500">Sin cambios registrados.</p>}</div></section>
 
         <section className="crm-panel p-6">
           <h2 className="crm-section-title">Citas</h2>
@@ -267,6 +272,7 @@ export default function CrmLeadDetailPage() {
               <label className="text-xs font-semibold text-slate-600">Resultado<select value={outcome} onChange={(event) => setOutcome(event.target.value)} className="mt-1.5 h-11 w-full crm-field px-3 text-sm font-normal outline-none focus:border-[#111111] focus:ring-2 focus:ring-[#a5b4fc]">{Object.entries(CRM_OUTCOME_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
             </div>
             <label className="block text-xs font-semibold text-slate-600">Resumen breve<input required maxLength={220} value={summary} onChange={(event) => setSummary(event.target.value)} placeholder="Ej. Solicitó información del plan en soles" className="mt-1.5 h-11 w-full crm-field px-3 text-sm font-normal outline-none focus:border-[#111111] focus:ring-2 focus:ring-[#a5b4fc]" /><span className="mt-1 block text-right text-[11px] font-normal text-slate-400">{summary.length}/220</span></label>
+            <label className="block text-xs font-semibold text-slate-600">Siguiente acción<input required maxLength={220} value={nextAction} onChange={(event) => setNextAction(event.target.value)} placeholder="Ej. Enviar propuesta y llamar el viernes" className="mt-1.5 h-11 w-full crm-field px-3 text-sm font-normal" /></label>
             <label className="block text-xs font-semibold text-slate-600">Detalles y acuerdos<textarea rows={4} value={details} onChange={(event) => setDetails(event.target.value)} placeholder="Puntos relevantes, objeciones y siguiente acción" className="mt-1.5 w-full resize-y crm-field p-3 text-sm font-normal outline-none focus:border-[#111111] focus:ring-2 focus:ring-[#a5b4fc]" /></label>
             <label className="block text-xs font-semibold text-slate-600">Transcripción de WhatsApp (opcional)<textarea rows={5} value={transcript} onChange={(event) => setTranscript(event.target.value)} placeholder="Pega aquí la conversación exportada o un fragmento relevante" className="mt-1.5 w-full resize-y crm-field p-3 text-sm font-normal outline-none focus:border-[#111111] focus:ring-2 focus:ring-[#a5b4fc]" /></label>
             <label className="block text-xs font-semibold text-slate-600">Captura o archivo de conversación (opcional)<input type="file" accept="image/png,image/jpeg,application/pdf,text/plain" onChange={(event) => setInteractionFile(event.target.files?.[0] || null)} className="mt-1.5 block w-full text-xs font-normal" /><span className="mt-1 block font-normal text-slate-400">PNG, JPG, PDF o TXT · máximo 5 MB.</span></label>

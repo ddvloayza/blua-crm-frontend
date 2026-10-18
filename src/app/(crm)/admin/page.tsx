@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Download, TrendingUp } from "lucide-react";
 import { useCrm } from "@/context/CrmContext";
+import { AdminOperations } from "@/components/crm/AdminOperations";
 import { FunnelChart, MetricCard } from "@/components/crm/CrmUI";
 import { CrmAdvisor, CrmDashboard, getCrmAdvisors, getCrmDashboard } from "@/lib/crm/api";
 
@@ -91,7 +92,7 @@ export default function CrmAdminPage() {
               return <button key={advisor.uuid} onClick={() => { setDashboard(null); setSelected(advisor.uuid); }} aria-pressed={selected === advisor.uuid} className={`w-full px-2 py-4 text-left hover:bg-[#eef2ff] ${selected === advisor.uuid ? "bg-[#e2e8ff]" : ""}`}>
                 <div className="flex items-center gap-3">
                   <div className="flex h-9 w-9 shrink-0 items-center justify-center border border-[#111111] bg-[#34D399] text-sm font-semibold text-[#111111]">{advisor.name?.[0] || advisor.email[0]}</div>
-                  <div className="min-w-0 flex-1"><div className="truncate text-sm font-semibold text-slate-800">{advisor.name || advisor.email}</div><div className="text-xs text-slate-500">{advisor.interactionsCount} gestiones · {advisor.convertedLeads} convertidos</div></div>
+                  <div className="min-w-0 flex-1"><div className="truncate text-sm font-semibold text-slate-800">{advisor.name || advisor.email}</div><div className="text-xs text-slate-500">{advisor.activeLeads}/{advisor.maxActiveLeads} leads · {advisor.interactionsCount} gestiones · {advisor.convertedLeads} convertidos</div></div>
                   <div className="text-right"><div className="text-sm font-semibold text-slate-800">{contactRate}%</div><div className="text-xs text-slate-500">{advisor.contactedLeads}/{advisor.activeLeads} contactados</div></div>
                 </div>
                 <div className="mt-3 h-2 overflow-hidden border border-[#111111] bg-white" role="progressbar" aria-label={`Contactados por ${advisor.name || advisor.email}`} aria-valuenow={contactRate} aria-valuemin={0} aria-valuemax={100}>
@@ -103,6 +104,7 @@ export default function CrmAdminPage() {
           </div>
         </div>
       </div>
+      <AdminOperations advisorId={selected} />
     </> : !dashboardError && <div className="crm-panel p-8 text-sm text-slate-500">Cargando indicadores…</div>}
   </div>;
 }
