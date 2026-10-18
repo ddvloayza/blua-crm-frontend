@@ -1,18 +1,16 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
-import { ArrowRight, TrendingUp } from "lucide-react";
+import { TrendingUp } from "lucide-react";
 import { useCrm } from "@/context/CrmContext";
-import { FunnelChart, LeadTable, MetricCard } from "@/components/crm/CrmUI";
-import { CrmAdvisor, CrmDashboard, CrmLead, getCrmAdvisors, getCrmDashboard, getCrmLeads } from "@/lib/crm/api";
+import { FunnelChart, MetricCard } from "@/components/crm/CrmUI";
+import { CrmAdvisor, CrmDashboard, getCrmAdvisors, getCrmDashboard } from "@/lib/crm/api";
 
 export default function CrmAdminPage() {
   const { actor } = useCrm();
   const [advisors, setAdvisors] = useState<CrmAdvisor[]>([]);
   const [selected, setSelected] = useState("");
   const [dashboard, setDashboard] = useState<CrmDashboard | null>(null);
-  const [leads, setLeads] = useState<CrmLead[]>([]);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -21,8 +19,8 @@ export default function CrmAdminPage() {
   }, [actor]);
   useEffect(() => {
     if (actor?.role !== "ADMIN") return;
-    Promise.all([getCrmDashboard(selected || undefined), getCrmLeads({ advisorId: selected || undefined, limit: 100 })])
-      .then(([summary, rows]) => { setDashboard(summary); setLeads(rows.slice(0, 6)); setError(""); })
+    getCrmDashboard(selected || undefined)
+      .then((summary) => { setDashboard(summary); setError(""); })
       .catch((reason) => setError(reason?.message || "No se pudo cargar el dashboard."));
   }, [actor, selected]);
 
@@ -55,21 +53,25 @@ export default function CrmAdminPage() {
         <FunnelChart dashboard={dashboard} />
         <div className="crm-panel p-6">
           <div className="flex items-center gap-2"><TrendingUp size={20} className="text-[#4A63E7]" /><h2 className="crm-section-title">Rendimiento del equipo</h2></div>
-          <p className="mt-1 text-sm text-slate-500">Cartera activa, contacto e inversión por asesor</p>
+          <p className="mt-1 text-sm text-slate-500">Cartera, contacto y conversiones por asesor</p>
           <div className="mt-5 divide-y divide-[#e5e7eb]">
-            {advisors.map((advisor) => <button key={advisor.uuid} onClick={() => setSelected(advisor.uuid)} className={`flex w-full items-center gap-3 px-2 py-3 text-left hover:bg-[#eef2ff] ${selected === advisor.uuid ? "bg-[#e2e8ff]" : ""}`}>
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center border border-[#111111] bg-[#34D399] text-sm font-semibold text-[#111111]">{advisor.name?.[0] || advisor.email[0]}</div>
-              <div className="min-w-0 flex-1"><div className="truncate text-sm font-semibold text-slate-800">{advisor.name || advisor.email}</div><div className="text-xs text-slate-500">{advisor.interactionsCount} gestiones</div></div>
-              <div className="text-right"><div className="text-sm font-semibold text-slate-800">{advisor.contactedLeads}/{advisor.activeLeads}</div><div className="text-xs text-slate-500">contactados</div></div>
-              <div className="w-14 text-right"><div className="text-sm font-semibold text-emerald-700">{advisor.convertedLeads}</div><div className="text-xs text-slate-500">convertidos</div></div>
-            </button>)}
+            {advisors.map((advisor) => {
+              const contactRate = advisor.activeLeads ? Math.round((advisor.contactedLeads / advisor.activeLeads) * 100) : 0;
+              return <button key={advisor.uuid} onClick={() => setSelected(advisor.uuid)} aria-pressed={selected === advisor.uuid} className={`w-full px-2 py-4 text-left hover:bg-[#eef2ff] ${selected === advisor.uuid ? "bg-[#e2e8ff]" : ""}`}>
+                <div className="flex items-center gap-3">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center border border-[#111111] bg-[#34D399] text-sm font-semibold text-[#111111]">{advisor.name?.[0] || advisor.email[0]}</div>
+                  <div className="min-w-0 flex-1"><div className="truncate text-sm font-semibold text-slate-800">{advisor.name || advisor.email}</div><div className="text-xs text-slate-500">{advisor.interactionsCount} gestiones · {advisor.convertedLeads} convertidos</div></div>
+                  <div className="text-right"><div className="text-sm font-semibold text-slate-800">{contactRate}%</div><div className="text-xs text-slate-500">{advisor.contactedLeads}/{advisor.activeLeads} contactados</div></div>
+                </div>
+                <div className="mt-3 h-2 overflow-hidden border border-[#111111] bg-white" role="progressbar" aria-label={`Contactados por ${advisor.name || advisor.email}`} aria-valuenow={contactRate} aria-valuemin={0} aria-valuemax={100}>
+                  <div className="h-full bg-[#4A63E7]" style={{ width: `${Math.min(contactRate, 100)}%` }} />
+                </div>
+              </button>;
+            })}
             {!advisors.length && <div className="py-6 text-sm text-slate-500">Todavía no hay perfiles de asesores.</div>}
           </div>
         </div>
       </div>
-      <div className="flex items-center justify-between"><div><h2 className="crm-section-title">Prospectos recientes</h2><p className="mt-1 text-sm text-slate-500">{name ? `Cartera de ${name}` : "Vista del equipo"}</p></div>
-        <Link href={selected ? `/leads?advisor=${selected}` : "/leads"} className="inline-flex items-center gap-2 text-sm font-semibold text-[#111111] hover:underline">Ver todos <ArrowRight size={15} /></Link></div>
-      <LeadTable leads={leads} showAdvisor={!selected} />
     </> : !error && <div className="crm-panel p-8 text-sm text-slate-500">Cargando indicadores…</div>}
   </div>;
 }

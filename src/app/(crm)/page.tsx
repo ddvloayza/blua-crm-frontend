@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ArrowRight, Clock3, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useCrm } from "@/context/CrmContext";
@@ -9,16 +10,23 @@ import { CrmDashboard, CrmLead, getCrmDashboard, getCrmLeads } from "@/lib/crm/a
 
 export default function CrmHomePage() {
   const { actor } = useCrm();
+  const router = useRouter();
   const [dashboard, setDashboard] = useState<CrmDashboard | null>(null);
   const [leads, setLeads] = useState<CrmLead[]>([]);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (!actor) return;
+    if (actor?.role === "ADMIN") router.replace("/admin");
+  }, [actor?.role, router]);
+
+  useEffect(() => {
+    if (actor?.role !== "ADVISOR") return;
     Promise.all([getCrmDashboard(), getCrmLeads({ limit: 100 })])
       .then(([summary, rows]) => { setDashboard(summary); setLeads(rows); })
       .catch((reason) => setError(reason?.message || "No se pudo cargar el panel."));
-  }, [actor]);
+  }, [actor?.role]);
+
+  if (actor?.role === "ADMIN") return <div className="crm-panel p-8 text-sm text-slate-500">Abriendo dashboard de supervisión…</div>;
 
   const due = leads.filter((lead) => lead.nextFollowupAt && new Date(lead.nextFollowupAt) <= new Date() && !["LOST", "CONVERTED", "DO_NOT_CONTACT"].includes(lead.status));
   const priority = [...due, ...leads.filter((lead) => !due.some((item) => item.uuid === lead.uuid) && ["NEW", "ASSIGNED"].includes(lead.status))].slice(0, 6);
@@ -27,7 +35,7 @@ export default function CrmHomePage() {
     <div className="flex flex-wrap items-end justify-between gap-5">
       <div><div className="crm-kicker">Tu espacio comercial</div>
         <h1 className="mt-2 crm-title">Hola, {actor?.name?.split(" ")[0] || "equipo"}</h1>
-        <p className="mt-2 text-sm text-slate-500">{actor?.role === "ADMIN" ? "Vista general de la gestión comercial." : "Organiza tus prospectos y registra cada gestión."}</p>
+        <p className="mt-2 text-sm text-slate-500">Organiza tus prospectos y registra cada gestión.</p>
       </div>
       <Link href="/leads" className="inline-flex items-center gap-2 crm-button">Ver prospectos <ArrowRight size={17} /></Link>
     </div>
@@ -43,7 +51,7 @@ export default function CrmHomePage() {
       </div>
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(330px,0.65fr)]">
         <div><div className="mb-4 flex items-center justify-between"><div><h2 className="crm-section-title">Atención prioritaria</h2><p className="mt-1 text-sm text-slate-500">Seguimientos vencidos y prospectos nuevos</p></div><Clock3 size={19} className="text-amber-500" /></div>
-          <LeadTable leads={priority} showAdvisor={actor?.role === "ADMIN"} empty="No tienes gestiones pendientes en este momento." />
+          <LeadTable leads={priority} empty="No tienes gestiones pendientes en este momento." />
         </div>
         <FunnelChart dashboard={dashboard} />
       </div>

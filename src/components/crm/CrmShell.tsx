@@ -30,11 +30,15 @@ export function CrmShell({ children }: { children: React.ReactNode }) {
     </div>
   </div>;
 
-  const items = [
-    { href: "/", label: "Inicio", icon: LayoutDashboard, exact: true },
-    { href: "/leads", label: "Prospectos", icon: Users, exact: false },
-    ...(actor.role === "ADMIN" ? [{ href: "/admin", label: "Supervisión", icon: BarChart3, exact: false }] : []),
-  ];
+  const items = actor.role === "ADMIN"
+    ? [
+        { href: "/admin", label: "Dashboard", icon: BarChart3, exact: false },
+        { href: "/leads", label: "Prospectos", icon: Users, exact: false },
+      ]
+    : [
+        { href: "/", label: "Inicio", icon: LayoutDashboard, exact: true },
+        { href: "/leads", label: "Prospectos", icon: Users, exact: false },
+      ];
 
   const nav = <>
     <div className="flex h-[92px] items-center gap-3 border-b border-[#111111] px-5">
