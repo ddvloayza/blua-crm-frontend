@@ -55,6 +55,13 @@ export default function CrmLeadDetailPage() {
       .finally(() => setLoading(false));
   }, [actor, params.id]);
 
+  function setFollowupWeeksFromNow(weeks: number) {
+    const date = new Date();
+    date.setDate(date.getDate() + weeks * 7);
+    const pad = (value: number) => String(value).padStart(2, "0");
+    setFollowup(`${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`);
+  }
+
   async function submit(event: React.FormEvent) {
     event.preventDefault();
     if (!lead) return;
@@ -233,7 +240,14 @@ export default function CrmLeadDetailPage() {
             <label className="block text-xs font-semibold text-slate-600">Detalles y acuerdos<textarea rows={4} value={details} onChange={(event) => setDetails(event.target.value)} placeholder="Puntos relevantes, objeciones y siguiente acción" className="mt-1.5 w-full resize-y crm-field p-3 text-sm font-normal outline-none focus:border-[#111111] focus:ring-2 focus:ring-[#a5b4fc]" /></label>
             <label className="block text-xs font-semibold text-slate-600">Transcripción de WhatsApp (opcional)<textarea rows={5} value={transcript} onChange={(event) => setTranscript(event.target.value)} placeholder="Pega aquí la conversación exportada o un fragmento relevante" className="mt-1.5 w-full resize-y crm-field p-3 text-sm font-normal outline-none focus:border-[#111111] focus:ring-2 focus:ring-[#a5b4fc]" /></label>
             <label className="block text-xs font-semibold text-slate-600">Captura o archivo de conversación (opcional)<input type="file" accept="image/png,image/jpeg,application/pdf,text/plain" onChange={(event) => setInteractionFile(event.target.files?.[0] || null)} className="mt-1.5 block w-full text-xs font-normal" /><span className="mt-1 block font-normal text-slate-400">PNG, JPG, PDF o TXT · máximo 5 MB.</span></label>
-            <label className="block text-xs font-semibold text-slate-600">Próximo seguimiento<input type="datetime-local" value={followup} onChange={(event) => setFollowup(event.target.value)} className="mt-1.5 h-11 w-full crm-field px-3 text-sm font-normal outline-none focus:border-[#111111] focus:ring-2 focus:ring-[#a5b4fc]" /></label>
+            <div>
+              <label className="block text-xs font-semibold text-slate-600">Próximo seguimiento<input type="datetime-local" value={followup} onChange={(event) => setFollowup(event.target.value)} className="mt-1.5 h-11 w-full crm-field px-3 text-sm font-normal outline-none focus:border-[#111111] focus:ring-2 focus:ring-[#a5b4fc]" /></label>
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <span className="font-mono text-[11px] text-slate-600">ACCESOS RÁPIDOS</span>
+                <button type="button" onClick={() => setFollowupWeeksFromNow(1)} className="crm-button crm-button-secondary crm-quick-action" aria-label="Programar seguimiento dentro de una semana">1 semana</button>
+                <button type="button" onClick={() => setFollowupWeeksFromNow(2)} className="crm-button crm-button-secondary crm-quick-action" aria-label="Programar seguimiento dentro de dos semanas">2 semanas</button>
+              </div>
+            </div>
             <label className="block text-xs font-semibold text-slate-600">Cambiar etapa del funnel<select value={status} onChange={(event) => setStatus(event.target.value)} className="mt-1.5 h-11 w-full crm-field px-3 text-sm font-normal outline-none focus:border-[#111111] focus:ring-2 focus:ring-[#a5b4fc]"><option value="">Mantener etapa actual</option>{Object.entries(CRM_STATUS_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
             {saveError && <div role="alert" className="border border-red-700 bg-[#fee2e2] p-3 text-sm text-red-700">{saveError}</div>}
             {saved && <div role="status" className="flex items-center gap-2 border border-[#111111] bg-[#d1fae5] p-3 text-sm text-emerald-700"><CheckCircle2 size={17} /> Gestión guardada correctamente.</div>}
