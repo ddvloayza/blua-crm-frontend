@@ -20,7 +20,8 @@ button:disabled { cursor: not-allowed; }
 ::selection { background: var(--crm-green); color: var(--crm-ink); }
 
 .crm-app { min-height: 100vh; background: var(--crm-paper); color: var(--crm-ink); }
-.crm-panel { border: 1px solid var(--crm-ink); background: var(--crm-surface); transition: box-shadow .16s ease; }
+.crm-panel { border: 1px solid var(--crm-ink); background: var(--crm-surface); }
+.crm-panel, .crm-signin-hero { transform: perspective(900px) translate3d(0, 0, 0) rotateX(0) rotateY(0); transition: transform .24s cubic-bezier(.2, .7, .2, 1), box-shadow .24s ease; }
 .crm-kicker { color: var(--crm-blue); font-family: "Courier New", Courier, monospace; font-size: 11px; font-weight: 700; letter-spacing: .09em; line-height: 1.4; }
 .crm-kicker-light { color: #dfe6ff; }
 .crm-title { color: var(--crm-ink); font-size: clamp(2rem, 3vw, 3.5rem); font-weight: 400; letter-spacing: -.045em; line-height: 1.05; text-transform: uppercase; }
@@ -40,13 +41,17 @@ button:disabled { cursor: not-allowed; }
 .crm-field::placeholder { color: #6b7280; }
 .crm-app :focus-visible, .crm-signin :focus-visible { outline: 2px solid var(--crm-blue); outline-offset: 2px; }
 .crm-app input[type="file"] { max-width: 100%; }
-.crm-signin-hero { background: linear-gradient(135deg, #3866f2 0%, #023373 100%); transition: box-shadow .16s ease; }
+.crm-signin-hero { background: linear-gradient(135deg, #3866f2 0%, #023373 100%); }
 
 @media (hover: hover) {
-  .crm-panel:hover, .crm-signin-hero:hover { box-shadow: -8px 8px 0 var(--crm-ink); }
+  .crm-panel:hover, .crm-signin-hero:hover {
+    transform: perspective(900px) translate3d(0, -5px, 12px) rotateX(1.5deg) rotateY(-1.5deg);
+    box-shadow: 0 14px 24px rgba(2, 51, 115, .16);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   .crm-button, .crm-panel, .crm-signin-hero { transition: none; }
+  .crm-panel:hover, .crm-signin-hero:hover { transform: none; }
 }
