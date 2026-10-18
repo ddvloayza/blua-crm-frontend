@@ -4,7 +4,7 @@ Aplicación independiente para asesores y administradores del CRM. Usa el mismo 
 
 ## Desarrollo local
 
-1. Copia `.env.example` a `.env.local` y reemplaza `API_HOST` con la URL del backend. Confirma las rutas reales de login, refresh y logout con las variables usadas por `blua-investment-frontend`.
+1. Copia `.env.example` a `.env.local`. El ejemplo apunta al Django local en `http://localhost:8000`; si usas otro backend, cambia las cuatro URL.
 2. Ejecuta `npm ci` y `npm run dev`.
 3. Abre `http://localhost:3000/signin`.
 

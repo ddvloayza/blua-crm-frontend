@@ -21,12 +21,17 @@ async function refreshSession(): Promise<boolean> {
 export async function graphqlRequest(query: string, variables?: Record<string, unknown>, retry = true): Promise<GraphqlResult> {
   const endpoint = process.env.NEXT_PUBLIC_GRAPHQL_ENDPOINT;
   if (!endpoint) throw new Error("Falta configurar NEXT_PUBLIC_GRAPHQL_ENDPOINT.");
-  const response = await fetch(endpoint, {
-    method: "POST",
-    credentials: "include",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ query, variables }),
-  });
+  let response: Response;
+  try {
+    response = await fetch(endpoint, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ query, variables }),
+    });
+  } catch {
+    throw new Error("No se pudo conectar con Django. Revisa la URL del backend y que el servidor esté encendido.");
+  }
   if (!response.ok) throw new Error(`El servidor respondió ${response.status}.`);
   const result = await response.json() as GraphqlResult;
   if (authFailure(result)) {
