@@ -43,11 +43,6 @@ button:disabled { cursor: not-allowed; }
 .crm-app :focus-visible, .crm-signin :focus-visible { outline: 2px solid var(--crm-blue); outline-offset: 2px; }
 .crm-app input[type="file"] { max-width: 100%; }
 .crm-signin-hero { background: linear-gradient(135deg, #3866f2 0%, #023373 100%); }
-.crm-action-card { display: flex; flex-direction: column; align-items: flex-start; min-height: 278px; width: 100%; border: 1px solid var(--crm-ink); border-radius: 0; padding: 1.25rem; background: var(--crm-surface); color: var(--crm-ink); text-align: left; transition: transform .2s cubic-bezier(.2, .7, .2, 1), box-shadow .2s ease, background-color .2s ease; }
-.crm-action-card-step { margin-top: 1.15rem; color: var(--crm-blue); font-family: "Courier New", Courier, monospace; font-size: 11px; font-weight: 700; letter-spacing: .09em; }
-.crm-action-card-title { margin-top: .55rem; font-size: 1.35rem; font-weight: 700; letter-spacing: -.035em; line-height: 1.15; }
-.crm-action-card-description { margin-top: .65rem; color: #4b5563; font-size: .88rem; line-height: 1.45; }
-.crm-action-card-footer { display: flex; align-items: center; justify-content: space-between; gap: 1rem; width: 100%; margin-top: auto; border-top: 1px solid var(--crm-ink); padding-top: .85rem; font-family: "Courier New", Courier, monospace; font-size: 11px; font-weight: 700; letter-spacing: .04em; }
 .crm-modal { width: min(720px, calc(100% - 2rem)); max-width: none; max-height: min(90dvh, 900px); margin: auto; padding: 0; border: 1px solid var(--crm-ink); border-radius: 0; background: var(--crm-surface); color: var(--crm-ink); box-shadow: -10px 10px 0 var(--crm-ink); }
 .crm-modal:not([open]) { display: none; }
 .crm-modal[open] { display: flex; flex-direction: column; }
@@ -58,7 +53,6 @@ button:disabled { cursor: not-allowed; }
 .crm-modal-body { min-height: 0; overflow-y: auto; padding: 1.5rem; }
 
 @media (hover: hover) {
-  .crm-action-card:hover { transform: translate3d(8px, -8px, 0); box-shadow: -8px 8px 0 var(--crm-ink); background: var(--crm-green-soft); }
   .crm-panel:hover, .crm-signin-hero:hover {
     transform: translate3d(6px, -6px, 0);
     box-shadow: -12px 12px 0 var(--crm-ink);
@@ -68,7 +62,6 @@ button:disabled { cursor: not-allowed; }
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
-  .crm-button, .crm-action-card, .crm-panel, .crm-signin-hero { transition: none; }
-  .crm-action-card:hover, .crm-panel:hover, .crm-signin-hero:hover { transform: none; }
-  .crm-action-card:hover { box-shadow: none; }
+  .crm-button, .crm-panel, .crm-signin-hero { transition: none; }
+  .crm-panel:hover, .crm-signin-hero:hover { transform: none; }
 }

@@ -6,13 +6,12 @@ import { X } from "lucide-react";
 type CrmModalProps = {
   title: string;
   description?: string;
-  icon?: React.ReactNode;
   busy?: boolean;
   onClose: () => void;
   children: React.ReactNode;
 };
 
-export function CrmModal({ title, description, icon, busy = false, onClose, children }: CrmModalProps) {
+export function CrmModal({ title, description, busy = false, onClose, children }: CrmModalProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const titleId = useId();
 
@@ -38,13 +37,10 @@ export function CrmModal({ title, description, icon, busy = false, onClose, chil
     }}
   >
     <div className="crm-modal-header">
-      <div className="flex items-start gap-3">
-        {icon}
-        <div>
-          <div className="crm-kicker">BLUA / CRM</div>
-          <h2 id={titleId} className="crm-section-title mt-2">{title}</h2>
-          {description && <p className="mt-1 text-sm text-slate-500">{description}</p>}
-        </div>
+      <div>
+        <div className="crm-kicker">BLUA / CRM</div>
+        <h2 id={titleId} className="crm-section-title mt-2">{title}</h2>
+        {description && <p className="mt-1 text-sm text-slate-500">{description}</p>}
       </div>
       <button type="button" onClick={onClose} disabled={busy} aria-label={`Cerrar ${title}`} className="crm-modal-close"><X size={20} /></button>
     </div>
