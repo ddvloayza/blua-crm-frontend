@@ -43,6 +43,14 @@ button:disabled { cursor: not-allowed; }
 .crm-app :focus-visible, .crm-signin :focus-visible { outline: 2px solid var(--crm-blue); outline-offset: 2px; }
 .crm-app input[type="file"] { max-width: 100%; }
 .crm-signin-hero { background: linear-gradient(135deg, #3866f2 0%, #023373 100%); }
+.crm-modal { width: min(720px, calc(100% - 2rem)); max-width: none; max-height: min(90dvh, 900px); margin: auto; padding: 0; border: 1px solid var(--crm-ink); border-radius: 0; background: var(--crm-surface); color: var(--crm-ink); box-shadow: -10px 10px 0 var(--crm-ink); }
+.crm-modal:not([open]) { display: none; }
+.crm-modal[open] { display: flex; flex-direction: column; }
+.crm-modal::backdrop { background: rgb(9 16 35 / 68%); backdrop-filter: blur(2px); }
+.crm-modal-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; flex: 0 0 auto; border-bottom: 1px solid var(--crm-ink); padding: 1.25rem 1.5rem; background: var(--crm-blue-soft); }
+.crm-modal-close { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; width: 2.25rem; height: 2.25rem; border: 1px solid var(--crm-ink); background: var(--crm-surface); }
+.crm-modal-close:hover { background: var(--crm-green-soft); }
+.crm-modal-body { min-height: 0; overflow-y: auto; padding: 1.5rem; }
 
 @media (hover: hover) {
   .crm-panel:hover, .crm-signin-hero:hover {

@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { ArrowLeft, CalendarClock, CheckCircle2, Mail, MessageCircle, Phone, Send } from "lucide-react";
+import { ArrowLeft, CalendarClock, CalendarPlus, CheckCircle2, FilePlus2, Mail, MessageCircle, Phone, Send } from "lucide-react";
 import { useCrm } from "@/context/CrmContext";
+import { CrmModal } from "@/components/crm/CrmModal";
 import { StatusBadge } from "@/components/crm/CrmUI";
 import {
   CrmLead, CRM_OUTCOME_LABELS, CRM_STATUS_LABELS, formatCrmDate,
@@ -18,6 +19,8 @@ const channels = [
   ["MEETING", "Reunión"], ["MESSAGE", "Mensaje"], ["OTHER", "Otro"],
 ];
 
+type LeadModal = "interaction" | "appointment" | "proposal" | null;
+
 export default function CrmLeadDetailPage() {
   const { actor } = useCrm();
   const params = useParams<{ id: string }>();
@@ -26,7 +29,6 @@ export default function CrmLeadDetailPage() {
   const [loadError, setLoadError] = useState("");
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
-  const [saved, setSaved] = useState(false);
   const [channel, setChannel] = useState("WHATSAPP");
   const [outcome, setOutcome] = useState("INTERESTED");
   const [summary, setSummary] = useState("");
@@ -45,6 +47,14 @@ export default function CrmLeadDetailPage() {
   const [proposalFile, setProposalFile] = useState<File | null>(null);
   const [activityError, setActivityError] = useState("");
   const [activityBusy, setActivityBusy] = useState(false);
+  const [activeModal, setActiveModal] = useState<LeadModal>(null);
+  const [notice, setNotice] = useState("");
+  const [noticeWarning, setNoticeWarning] = useState(false);
+
+  function openModal(modal: Exclude<LeadModal, null>) {
+    setSaveError(""); setActivityError(""); setNotice(""); setNoticeWarning(false);
+    setActiveModal(modal);
+  }
 
   useEffect(() => {
     if (!actor || !params.id) return;
@@ -65,7 +75,7 @@ export default function CrmLeadDetailPage() {
   async function submit(event: React.FormEvent) {
     event.preventDefault();
     if (!lead) return;
-    setSaving(true); setSaveError(""); setSaved(false);
+    setSaving(true); setSaveError(""); setNotice("");
     try {
       const recorded = await recordCrmInteraction({
         leadId: lead.uuid,
@@ -77,15 +87,20 @@ export default function CrmLeadDetailPage() {
         nextFollowupAt: followup ? new Date(followup).toISOString() : null,
         status: status || null,
       });
+      let uploadWarning = "";
       if (interactionFile) {
         try {
           await uploadCrmAttachment(interactionFile, { interactionId: recorded.interactionId });
         } catch (uploadError: unknown) {
-          setSaveError(`La gestión se guardó, pero el archivo no se pudo subir: ${uploadError instanceof Error ? uploadError.message : "error desconocido"}`);
+          uploadWarning = `La gestión se guardó, pero el archivo no se pudo subir: ${uploadError instanceof Error ? uploadError.message : "error desconocido"}`;
         }
       }
-      setLead(await getCrmLead(lead.uuid));
-      setSummary(""); setDetails(""); setTranscript(""); setInteractionFile(null); setFollowup(""); setStatus(""); setSaved(true);
+      try { setLead(await getCrmLead(lead.uuid)); }
+      catch { uploadWarning = [uploadWarning, "Actualiza la ficha para ver la gestión nueva."].filter(Boolean).join(" "); }
+      setSummary(""); setDetails(""); setTranscript(""); setInteractionFile(null); setFollowup(""); setStatus("");
+      setNotice(uploadWarning || "Gestión guardada correctamente.");
+      setNoticeWarning(Boolean(uploadWarning));
+      setActiveModal(null);
     } catch (reason: unknown) {
       setSaveError(reason instanceof Error ? reason.message : "No se pudo guardar la gestión.");
     } finally {
@@ -99,8 +114,11 @@ export default function CrmLeadDetailPage() {
     setActivityBusy(true); setActivityError("");
     try {
       await createCrmAppointment({ leadId: lead.uuid, scheduledAt: new Date(appointmentAt).toISOString(), notes: appointmentNotes.trim() });
-      setLead(await getCrmLead(lead.uuid));
+      let refreshWarning = "";
+      try { setLead(await getCrmLead(lead.uuid)); }
+      catch { refreshWarning = "La cita se guardó. Actualiza la ficha para verla."; }
       setAppointmentAt(""); setAppointmentNotes("");
+      setNotice(refreshWarning || "Cita programada correctamente."); setNoticeWarning(Boolean(refreshWarning)); setActiveModal(null);
     } catch (error: unknown) {
       setActivityError(error instanceof Error ? error.message : "No se pudo guardar la cita.");
     } finally { setActivityBusy(false); }
@@ -116,12 +134,15 @@ export default function CrmLeadDetailPage() {
         termMonths: proposalTerm ? Number(proposalTerm) : null,
         validUntil: proposalUntil || null, notes: proposalNotes.trim(),
       });
+      let uploadWarning = "";
       if (proposalFile) {
         try { await uploadCrmAttachment(proposalFile, { proposalId }); }
-        catch (uploadError: unknown) { setActivityError(`Propuesta guardada; el PDF no se pudo subir: ${uploadError instanceof Error ? uploadError.message : "error desconocido"}`); }
+        catch (uploadError: unknown) { uploadWarning = `Propuesta guardada; el PDF no se pudo subir: ${uploadError instanceof Error ? uploadError.message : "error desconocido"}`; }
       }
-      setLead(await getCrmLead(lead.uuid));
+      try { setLead(await getCrmLead(lead.uuid)); }
+      catch { uploadWarning = [uploadWarning, "Actualiza la ficha para ver la propuesta nueva."].filter(Boolean).join(" "); }
       setProposalAmount(""); setProposalTerm(""); setProposalUntil(""); setProposalNotes(""); setProposalFile(null);
+      setNotice(uploadWarning || "Propuesta guardada correctamente."); setNoticeWarning(Boolean(uploadWarning)); setActiveModal(null);
     } catch (error: unknown) {
       setActivityError(error instanceof Error ? error.message : "No se pudo guardar la propuesta.");
     } finally { setActivityBusy(false); }
@@ -153,8 +174,14 @@ export default function CrmLeadDetailPage() {
         <h1 className="mt-2 crm-title">{lead.fullName || lead.email || "Prospecto sin nombre"}</h1>
         <div className="mt-3 flex flex-wrap items-center gap-3"><StatusBadge status={lead.status} /><span className="text-sm text-slate-500">Ingresó el {formatCrmDate(lead.createdAt)}</span></div>
       </div>
-      {actor?.role === "ADVISOR" && lead.status !== "DO_NOT_CONTACT" && <a href="#registrar-gestion" className="inline-flex items-center gap-2 crm-button"><Send size={16} /> Registrar gestión</a>}
+      {actor?.role === "ADVISOR" && lead.status !== "DO_NOT_CONTACT" && <div className="flex flex-wrap gap-2">
+        <button type="button" aria-haspopup="dialog" onClick={() => openModal("interaction")} className="inline-flex items-center gap-2 crm-button"><Send size={16} /> Registrar gestión</button>
+        <button type="button" aria-haspopup="dialog" onClick={() => openModal("appointment")} className="inline-flex items-center gap-2 crm-button crm-button-secondary"><CalendarPlus size={16} /> Programar cita</button>
+        <button type="button" aria-haspopup="dialog" onClick={() => openModal("proposal")} className="inline-flex items-center gap-2 crm-button crm-button-secondary"><FilePlus2 size={16} /> Crear propuesta</button>
+      </div>}
     </div>
+    {notice && <div role="status" className={`flex items-start gap-2 border border-[#111111] p-4 text-sm ${noticeWarning ? "bg-[#fef3c7] text-amber-900" : "bg-[#d1fae5] text-emerald-800"}`}><CheckCircle2 size={18} className="shrink-0" />{notice}</div>}
+    {activityError && !activeModal && <div role="alert" className="border border-red-700 bg-[#fee2e2] p-4 text-sm text-red-700">{activityError}</div>}
 
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(360px,0.75fr)]">
       <div className="space-y-6">
@@ -230,9 +257,12 @@ export default function CrmLeadDetailPage() {
           <p className="mt-4 text-xs text-slate-500">Último contacto registrado: {formatCrmDate(lead.lastContactedAt, true)}</p>
         </section>
 
-        {actor?.role === "ADVISOR" && lead.status !== "DO_NOT_CONTACT" && <section id="registrar-gestion" className="scroll-mt-6 crm-panel p-6"><h2 className="crm-section-title">Registrar gestión</h2><p className="mt-1 text-sm text-slate-500">Completa el resultado después de contactar al prospecto.</p>
-          <form onSubmit={submit} className="mt-5 space-y-4">
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
+        {actor?.role === "ADMIN" && <div className="border border-[#111111] bg-[#e2e8ff] p-5 text-sm text-[#111111]">Vista de supervisión. El asesor asignado registra las gestiones de este prospecto.</div>}
+      </div>
+    </div>
+    {actor?.role === "ADVISOR" && lead.status !== "DO_NOT_CONTACT" && activeModal === "interaction" && <CrmModal title="Registrar gestión" description="Completa el resultado después de contactar al prospecto." busy={saving} onClose={() => setActiveModal(null)}>
+      <form onSubmit={submit} className="space-y-4">
+            <div className="grid gap-4 sm:grid-cols-2">
               <label className="text-xs font-semibold text-slate-600">Canal<select value={channel} onChange={(event) => setChannel(event.target.value)} className="mt-1.5 h-11 w-full crm-field px-3 text-sm font-normal outline-none focus:border-[#111111] focus:ring-2 focus:ring-[#a5b4fc]">{channels.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
               <label className="text-xs font-semibold text-slate-600">Resultado<select value={outcome} onChange={(event) => setOutcome(event.target.value)} className="mt-1.5 h-11 w-full crm-field px-3 text-sm font-normal outline-none focus:border-[#111111] focus:ring-2 focus:ring-[#a5b4fc]">{Object.entries(CRM_OUTCOME_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
             </div>
@@ -250,31 +280,26 @@ export default function CrmLeadDetailPage() {
             </div>
             <label className="block text-xs font-semibold text-slate-600">Cambiar etapa del funnel<select value={status} onChange={(event) => setStatus(event.target.value)} className="mt-1.5 h-11 w-full crm-field px-3 text-sm font-normal outline-none focus:border-[#111111] focus:ring-2 focus:ring-[#a5b4fc]"><option value="">Mantener etapa actual</option>{Object.entries(CRM_STATUS_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
             {saveError && <div role="alert" className="border border-red-700 bg-[#fee2e2] p-3 text-sm text-red-700">{saveError}</div>}
-            {saved && <div role="status" className="flex items-center gap-2 border border-[#111111] bg-[#d1fae5] p-3 text-sm text-emerald-700"><CheckCircle2 size={17} /> Gestión guardada correctamente.</div>}
-            <button type="submit" disabled={saving} className="flex h-11 w-full items-center justify-center gap-2 crm-button"><Send size={16} /> {saving ? "Guardando…" : "Guardar gestión"}</button>
+            <div className="flex flex-wrap justify-end gap-3 border-t border-[#d1d5db] pt-4"><button type="button" disabled={saving} onClick={() => setActiveModal(null)} className="crm-button crm-button-secondary">Cancelar</button><button type="submit" disabled={saving} className="inline-flex items-center gap-2 crm-button"><Send size={16} /> {saving ? "Guardando…" : "Guardar gestión"}</button></div>
           </form>
-        </section>}
-        {actor?.role === "ADVISOR" && lead.status !== "DO_NOT_CONTACT" && <>
-          <section className="crm-panel p-6"><h2 className="crm-section-title">Programar cita</h2>
-            <form onSubmit={saveAppointment} className="mt-4 space-y-4">
+    </CrmModal>}
+    {actor?.role === "ADVISOR" && lead.status !== "DO_NOT_CONTACT" && activeModal === "appointment" && <CrmModal title="Programar cita" description="Agenda el próximo encuentro con el prospecto." busy={activityBusy} onClose={() => setActiveModal(null)}>
+      <form onSubmit={saveAppointment} className="space-y-4">
               <label className="block text-xs font-semibold text-slate-600">Fecha y hora<input required type="datetime-local" value={appointmentAt} onChange={(event) => setAppointmentAt(event.target.value)} className="mt-1.5 h-11 w-full crm-field px-3 text-sm font-normal" /></label>
               <label className="block text-xs font-semibold text-slate-600">Notas<textarea rows={3} value={appointmentNotes} onChange={(event) => setAppointmentNotes(event.target.value)} className="mt-1.5 w-full crm-field p-3 text-sm font-normal" /></label>
-              <button disabled={activityBusy} className="h-11 w-full crm-button">Guardar cita</button>
+              {activityError && <div role="alert" className="border border-red-700 bg-[#fee2e2] p-3 text-sm text-red-700">{activityError}</div>}
+              <div className="flex flex-wrap justify-end gap-3 border-t border-[#d1d5db] pt-4"><button type="button" disabled={activityBusy} onClick={() => setActiveModal(null)} className="crm-button crm-button-secondary">Cancelar</button><button type="submit" disabled={activityBusy} className="inline-flex items-center gap-2 crm-button"><CalendarPlus size={16} /> {activityBusy ? "Guardando…" : "Guardar cita"}</button></div>
             </form>
-          </section>
-          <section className="crm-panel p-6"><h2 className="crm-section-title">Crear propuesta</h2>
-            <form onSubmit={saveProposal} className="mt-4 space-y-4">
+    </CrmModal>}
+    {actor?.role === "ADVISOR" && lead.status !== "DO_NOT_CONTACT" && activeModal === "proposal" && <CrmModal title="Crear propuesta" description="Registra el borrador y adjunta el PDF si ya está listo." busy={activityBusy} onClose={() => setActiveModal(null)}>
+      <form onSubmit={saveProposal} className="space-y-4">
               <div className="grid grid-cols-[1fr_100px] gap-3"><label className="text-xs font-semibold text-slate-600">Monto<input required type="number" min="0.01" step="0.01" value={proposalAmount} onChange={(event) => setProposalAmount(event.target.value)} className="mt-1.5 h-11 w-full crm-field px-3 text-sm font-normal" /></label><label className="text-xs font-semibold text-slate-600">Moneda<select value={proposalCurrency} onChange={(event) => setProposalCurrency(event.target.value)} className="mt-1.5 h-11 w-full crm-field px-3 text-sm font-normal"><option>PEN</option><option>USD</option></select></label></div>
-              <div className="grid grid-cols-2 gap-3"><label className="text-xs font-semibold text-slate-600">Plazo (meses)<input type="number" min="1" max="600" value={proposalTerm} onChange={(event) => setProposalTerm(event.target.value)} className="mt-1.5 h-11 w-full crm-field px-3 text-sm font-normal" /></label><label className="text-xs font-semibold text-slate-600">Vigencia<input type="date" value={proposalUntil} onChange={(event) => setProposalUntil(event.target.value)} className="mt-1.5 h-11 w-full crm-field px-3 text-sm font-normal" /></label></div>
+              <div className="grid gap-3 sm:grid-cols-2"><label className="text-xs font-semibold text-slate-600">Plazo (meses)<input type="number" min="1" max="600" value={proposalTerm} onChange={(event) => setProposalTerm(event.target.value)} className="mt-1.5 h-11 w-full crm-field px-3 text-sm font-normal" /></label><label className="text-xs font-semibold text-slate-600">Vigencia<input type="date" value={proposalUntil} onChange={(event) => setProposalUntil(event.target.value)} className="mt-1.5 h-11 w-full crm-field px-3 text-sm font-normal" /></label></div>
               <label className="block text-xs font-semibold text-slate-600">Notas<textarea rows={3} value={proposalNotes} onChange={(event) => setProposalNotes(event.target.value)} className="mt-1.5 w-full crm-field p-3 text-sm font-normal" /></label>
               <label className="block text-xs font-semibold text-slate-600">PDF de la propuesta<input type="file" accept="application/pdf" onChange={(event) => setProposalFile(event.target.files?.[0] || null)} className="mt-1.5 block w-full text-xs font-normal" /><span className="mt-1 block font-normal text-slate-400">Máximo 5 MB.</span></label>
-              <button disabled={activityBusy} className="h-11 w-full crm-button">Guardar borrador</button>
+              {activityError && <div role="alert" className="border border-red-700 bg-[#fee2e2] p-3 text-sm text-red-700">{activityError}</div>}
+              <div className="flex flex-wrap justify-end gap-3 border-t border-[#d1d5db] pt-4"><button type="button" disabled={activityBusy} onClick={() => setActiveModal(null)} className="crm-button crm-button-secondary">Cancelar</button><button type="submit" disabled={activityBusy} className="inline-flex items-center gap-2 crm-button"><FilePlus2 size={16} /> {activityBusy ? "Guardando…" : "Guardar borrador"}</button></div>
             </form>
-          </section>
-          {activityError && <div role="alert" className="border border-red-700 bg-[#fee2e2] p-3 text-sm text-red-700">{activityError}</div>}
-        </>}
-        {actor?.role === "ADMIN" && <div className="border border-[#111111] bg-[#e2e8ff] p-5 text-sm text-[#111111]">Vista de supervisión. El asesor asignado registra las gestiones de este prospecto.</div>}
-      </div>
-    </div>
+    </CrmModal>}
   </div>;
 }
