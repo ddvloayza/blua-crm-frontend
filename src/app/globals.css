@@ -1,6 +1,44 @@
 @import "tailwindcss";
 
-body {
-  margin: 0;
-  font-family: Arial, Helvetica, sans-serif;
+:root {
+  color-scheme: light;
+  --crm-ink: #32302d;
+  --crm-paper: #f3f0ea;
+  --crm-surface: #fffdfa;
+  --crm-blue: #acd3f7;
+  --crm-yellow: #f4ed52;
+  --crm-orange: #f2a35e;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; background: var(--crm-paper); color: var(--crm-ink); font-family: Arial, Helvetica, sans-serif; }
+button, input, select, textarea { font: inherit; }
+button { cursor: pointer; }
+button:disabled { cursor: not-allowed; }
+::selection { background: var(--crm-yellow); color: var(--crm-ink); }
+
+.crm-app { min-height: 100vh; background: var(--crm-paper); color: var(--crm-ink); }
+.crm-panel { border: 1px solid var(--crm-ink); background: var(--crm-surface); }
+.crm-kicker { color: #615d57; font-family: "Courier New", Courier, monospace; font-size: 11px; font-weight: 700; letter-spacing: .09em; line-height: 1.4; }
+.crm-title { color: var(--crm-ink); font-size: clamp(2rem, 3vw, 3.5rem); font-weight: 400; letter-spacing: -.045em; line-height: 1.05; text-transform: uppercase; }
+.crm-section-title { color: var(--crm-ink); font-size: 1.15rem; font-weight: 500; letter-spacing: -.025em; text-transform: uppercase; }
+.crm-button { display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--crm-ink); border-radius: 0; background: var(--crm-blue); color: var(--crm-ink); padding: .7rem 1rem; font-size: .8rem; font-weight: 600; letter-spacing: .02em; text-decoration: none; transition: background .15s ease, transform .15s ease; }
+.crm-button:hover { background: #8dc3f4; transform: translateY(-1px); }
+.crm-button:disabled { opacity: .55; transform: none; }
+.crm-button-secondary { background: var(--crm-surface); }
+.crm-button-secondary:hover { background: var(--crm-yellow); }
+.crm-button-green { background: #c8f3e8; }
+.crm-button-green:hover { background: #a8e6d5; }
+.crm-link { color: var(--crm-ink); font-size: .8rem; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+.crm-link:hover { color: #a95d2c; }
+.crm-field { border: 1px solid #77736d; border-radius: 0; background: #fffdfa; color: var(--crm-ink); outline: none; }
+.crm-field:focus { border-color: var(--crm-ink); box-shadow: 0 0 0 2px var(--crm-blue); }
+.crm-field::placeholder { color: #817c75; }
+.crm-app :focus-visible, .crm-signin :focus-visible { outline: 2px solid #1769a8; outline-offset: 2px; }
+.crm-app input[type="file"] { max-width: 100%; }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .crm-button { transition: none; }
 }
