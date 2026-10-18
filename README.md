@@ -16,4 +16,4 @@ Después de publicar, agrega el dominio `crm.blua.pe` a esta app de Amplify. El 
 
 ## Acceso
 
-Las cuentas deben tener un perfil CRM de asesor o administrador en Django. El dashboard de asesores muestra los leads asignados; el administrador puede consultar todos y ver el funnel. La ficha permite registrar gestiones, citas, propuestas y adjuntos.
+Las cuentas reciben el rol mediante los grupos de Django `CRM Asesores` y `CRM Administradores`. El dashboard de asesores muestra los leads asignados; el administrador ve el avance del equipo y el funnel. Desde Supervisión puede descargar un `.xlsx` con el resumen, el progreso por asesor y la distribución de prospectos por estado. La exportación refleja el filtro de asesor seleccionado y la fecha de corte; es una fotografía de los datos actuales. La ficha permite registrar gestiones, citas, propuestas y adjuntos.
