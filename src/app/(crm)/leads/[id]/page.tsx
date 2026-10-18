@@ -1,0 +1,266 @@
+"use client";
+
+import Link from "next/link";
+import { useParams } from "next/navigation";
+import { useEffect, useState } from "react";
+import { ArrowLeft, CalendarClock, CheckCircle2, Mail, MessageCircle, Phone, Send } from "lucide-react";
+import { useCrm } from "@/context/CrmContext";
+import { StatusBadge } from "@/components/crm/CrmUI";
+import {
+  CrmLead, CRM_OUTCOME_LABELS, CRM_STATUS_LABELS, formatCrmDate,
+  getCrmLead, recordCrmInteraction, whatsappUrl, uploadCrmAttachment,
+  crmAttachmentUrl, createCrmAppointment, updateCrmAppointment,
+  createCrmProposal, updateCrmProposal,
+} from "@/lib/crm/api";
+
+const channels = [
+  ["WHATSAPP", "WhatsApp"], ["CALL", "Llamada"], ["EMAIL", "Correo"],
+  ["MEETING", "Reunión"], ["MESSAGE", "Mensaje"], ["OTHER", "Otro"],
+];
+
+export default function CrmLeadDetailPage() {
+  const { actor } = useCrm();
+  const params = useParams<{ id: string }>();
+  const [lead, setLead] = useState<CrmLead | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
+  const [saved, setSaved] = useState(false);
+  const [channel, setChannel] = useState("WHATSAPP");
+  const [outcome, setOutcome] = useState("INTERESTED");
+  const [summary, setSummary] = useState("");
+  const [details, setDetails] = useState("");
+  const [transcript, setTranscript] = useState("");
+  const [interactionFile, setInteractionFile] = useState<File | null>(null);
+  const [followup, setFollowup] = useState("");
+  const [status, setStatus] = useState("");
+  const [appointmentAt, setAppointmentAt] = useState("");
+  const [appointmentNotes, setAppointmentNotes] = useState("");
+  const [proposalAmount, setProposalAmount] = useState("");
+  const [proposalCurrency, setProposalCurrency] = useState("PEN");
+  const [proposalTerm, setProposalTerm] = useState("");
+  const [proposalUntil, setProposalUntil] = useState("");
+  const [proposalNotes, setProposalNotes] = useState("");
+  const [proposalFile, setProposalFile] = useState<File | null>(null);
+  const [activityError, setActivityError] = useState("");
+  const [activityBusy, setActivityBusy] = useState(false);
+
+  useEffect(() => {
+    if (!actor || !params.id) return;
+    setLoading(true);
+    getCrmLead(params.id)
+      .then(setLead)
+      .catch((reason) => setLoadError(reason?.message || "No se pudo cargar el prospecto."))
+      .finally(() => setLoading(false));
+  }, [actor, params.id]);
+
+  async function submit(event: React.FormEvent) {
+    event.preventDefault();
+    if (!lead) return;
+    setSaving(true); setSaveError(""); setSaved(false);
+    try {
+      const recorded = await recordCrmInteraction({
+        leadId: lead.uuid,
+        interactionType: channel,
+        outcome,
+        summary: summary.trim(),
+        details: details.trim(),
+        transcriptText: transcript.trim(),
+        nextFollowupAt: followup ? new Date(followup).toISOString() : null,
+        status: status || null,
+      });
+      if (interactionFile) {
+        try {
+          await uploadCrmAttachment(interactionFile, { interactionId: recorded.interactionId });
+        } catch (uploadError: unknown) {
+          setSaveError(`La gestión se guardó, pero el archivo no se pudo subir: ${uploadError instanceof Error ? uploadError.message : "error desconocido"}`);
+        }
+      }
+      setLead(await getCrmLead(lead.uuid));
+      setSummary(""); setDetails(""); setTranscript(""); setInteractionFile(null); setFollowup(""); setStatus(""); setSaved(true);
+    } catch (reason: unknown) {
+      setSaveError(reason instanceof Error ? reason.message : "No se pudo guardar la gestión.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function saveAppointment(event: React.FormEvent) {
+    event.preventDefault();
+    if (!lead || !appointmentAt) return;
+    setActivityBusy(true); setActivityError("");
+    try {
+      await createCrmAppointment({ leadId: lead.uuid, scheduledAt: new Date(appointmentAt).toISOString(), notes: appointmentNotes.trim() });
+      setLead(await getCrmLead(lead.uuid));
+      setAppointmentAt(""); setAppointmentNotes("");
+    } catch (error: unknown) {
+      setActivityError(error instanceof Error ? error.message : "No se pudo guardar la cita.");
+    } finally { setActivityBusy(false); }
+  }
+
+  async function saveProposal(event: React.FormEvent) {
+    event.preventDefault();
+    if (!lead) return;
+    setActivityBusy(true); setActivityError("");
+    try {
+      const proposalId = await createCrmProposal({
+        leadId: lead.uuid, amount: proposalAmount, currency: proposalCurrency,
+        termMonths: proposalTerm ? Number(proposalTerm) : null,
+        validUntil: proposalUntil || null, notes: proposalNotes.trim(),
+      });
+      if (proposalFile) {
+        try { await uploadCrmAttachment(proposalFile, { proposalId }); }
+        catch (uploadError: unknown) { setActivityError(`Propuesta guardada; el PDF no se pudo subir: ${uploadError instanceof Error ? uploadError.message : "error desconocido"}`); }
+      }
+      setLead(await getCrmLead(lead.uuid));
+      setProposalAmount(""); setProposalTerm(""); setProposalUntil(""); setProposalNotes(""); setProposalFile(null);
+    } catch (error: unknown) {
+      setActivityError(error instanceof Error ? error.message : "No se pudo guardar la propuesta.");
+    } finally { setActivityBusy(false); }
+  }
+
+  async function changeActivity(kind: "appointment" | "proposal", id: string, status: string) {
+    if (!lead) return;
+    setActivityBusy(true); setActivityError("");
+    try {
+      if (kind === "appointment") await updateCrmAppointment(id, status);
+      else await updateCrmProposal(id, status);
+      setLead(await getCrmLead(lead.uuid));
+    } catch (error: unknown) {
+      setActivityError(error instanceof Error ? error.message : "No se pudo actualizar el estado.");
+    } finally { setActivityBusy(false); }
+  }
+
+  if (loading) return <div className="rounded-2xl bg-white p-8 text-sm text-slate-500">Cargando ficha del prospecto…</div>;
+  if (loadError || !lead) return <div className="rounded-2xl bg-white p-8"><p className="text-sm text-slate-600">{loadError || "No tienes acceso a este prospecto o ya no existe."}</p><Link href="/leads" className="mt-4 inline-block text-sm font-semibold text-[#3458d8]">Volver a prospectos</Link></div>;
+
+  const whatsapp = lead.status !== "DO_NOT_CONTACT" ? whatsappUrl(lead) : null;
+  const latest = lead.latestSimulation;
+  const amount = latest ? new Intl.NumberFormat("es-PE", { style: "currency", currency: latest.currency }).format(Number(latest.capitalAmount)) : "—";
+
+  return <div className="space-y-7">
+    <Link href="/leads" className="inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-[#3458d8]"><ArrowLeft size={16} /> Volver a prospectos</Link>
+    <div className="flex flex-wrap items-start justify-between gap-5">
+      <div><div className="text-xs font-semibold uppercase tracking-[0.18em] text-[#4364dd]">Ficha del prospecto</div>
+        <h1 className="mt-2 text-3xl font-semibold tracking-tight text-[#132451]">{lead.fullName || lead.email || "Prospecto sin nombre"}</h1>
+        <div className="mt-3 flex flex-wrap items-center gap-3"><StatusBadge status={lead.status} /><span className="text-sm text-slate-500">Ingresó el {formatCrmDate(lead.createdAt)}</span></div>
+      </div>
+      {actor?.role === "ADVISOR" && lead.status !== "DO_NOT_CONTACT" && <a href="#registrar-gestion" className="inline-flex items-center gap-2 rounded-xl bg-[#3458d8] px-5 py-3 text-sm font-semibold text-white hover:bg-[#274ac4]"><Send size={16} /> Registrar gestión</a>}
+    </div>
+
+    <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(360px,0.75fr)]">
+      <div className="space-y-6">
+        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <h2 className="text-lg font-semibold text-[#132451]">Datos de contacto</h2>
+          <div className="mt-5 grid gap-4 sm:grid-cols-2">
+            <div className="rounded-xl bg-[#f8faff] p-4"><div className="flex items-center gap-2 text-xs font-medium text-slate-500"><Phone size={15} /> Teléfono</div><div className="mt-2 text-sm font-semibold text-slate-800">{lead.phone ? `${lead.countryPrefix} ${lead.phone}` : "No registrado"}</div></div>
+            <div className="rounded-xl bg-[#f8faff] p-4"><div className="flex items-center gap-2 text-xs font-medium text-slate-500"><Mail size={15} /> Correo</div><div className="mt-2 break-all text-sm font-semibold text-slate-800">{lead.email || "No registrado"}</div></div>
+          </div>
+          <div className="mt-5 flex flex-wrap gap-3">
+            {whatsapp && <a href={whatsapp} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-xl bg-[#eaf7ef] px-4 py-2.5 text-sm font-semibold text-[#167545]"><MessageCircle size={17} /> Abrir WhatsApp</a>}
+            {lead.email && lead.status !== "DO_NOT_CONTACT" && <a href={`mailto:${lead.email}`} className="inline-flex items-center gap-2 rounded-xl bg-blue-50 px-4 py-2.5 text-sm font-semibold text-[#3458d8]"><Mail size={17} /> Enviar correo</a>}
+            {lead.phone && lead.status !== "DO_NOT_CONTACT" && <a href={`tel:${lead.countryPrefix}${lead.phone}`} className="inline-flex items-center gap-2 rounded-xl bg-slate-100 px-4 py-2.5 text-sm font-semibold text-slate-700"><Phone size={17} /> Llamar</a>}
+          </div>
+          {lead.status === "DO_NOT_CONTACT" && <p className="mt-4 text-sm font-medium text-rose-700">Este prospecto está marcado como «No contactar».</p>}
+        </section>
+
+        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <h2 className="text-lg font-semibold text-[#132451]">Contexto comercial</h2>
+          <div className="mt-5 grid gap-4 sm:grid-cols-2">
+            <div><div className="text-xs text-slate-500">Origen</div><div className="mt-1 text-sm font-semibold text-slate-800">{lead.source || "—"}</div></div>
+            <div><div className="text-xs text-slate-500">Campaña</div><div className="mt-1 text-sm font-semibold text-slate-800">{lead.campaign || "—"}</div></div>
+            <div><div className="text-xs text-slate-500">Asesor responsable</div><div className="mt-1 text-sm font-semibold text-slate-800">{lead.advisorEmail || "Sin asignar"}</div></div>
+            <div><div className="text-xs text-slate-500">Simulaciones</div><div className="mt-1 text-sm font-semibold text-slate-800">{lead.simulationsCount}</div></div>
+          </div>
+          {latest && <div className="mt-5 rounded-xl border border-blue-100 bg-blue-50/70 p-4"><div className="text-xs font-semibold uppercase tracking-wider text-[#3458d8]">Última simulación</div><div className="mt-2 text-lg font-semibold text-[#132451]">{amount}</div><div className="mt-1 text-sm text-slate-600">{latest.fundPlanNameSnapshot || "Plan de inversión"} · {latest.termMonths} meses</div><div className="mt-1 text-xs text-slate-500">{formatCrmDate(latest.createdAt)}</div></div>}
+          {lead.notes && <div className="mt-5 border-t border-slate-100 pt-4"><div className="text-xs text-slate-500">Notas del prospecto</div><p className="mt-2 whitespace-pre-wrap text-sm text-slate-700">{lead.notes}</p></div>}
+        </section>
+
+        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <h2 className="text-lg font-semibold text-[#132451]">Historial de gestiones</h2>
+          <div className="mt-5 space-y-4">
+            {lead.interactions?.map((item) => <div key={item.uuid} className="relative border-l-2 border-[#b9c8ff] pl-5"><div className="absolute -left-[6px] top-1 h-2.5 w-2.5 rounded-full bg-[#4268e8]" />
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1"><div className="text-sm font-semibold text-slate-800">{item.summary}</div><span className="text-xs text-slate-400">{formatCrmDate(item.occurredAt, true)}</span></div>
+              <div className="mt-1 text-xs text-slate-500">{item.interactionType} · {CRM_OUTCOME_LABELS[item.outcome] || item.outcome} · {item.advisorEmail}</div>
+              {item.details && <p className="mt-2 whitespace-pre-wrap text-sm text-slate-600">{item.details}</p>}
+              {item.transcriptText && <details className="mt-2 rounded-lg bg-slate-50 p-3 text-xs text-slate-600"><summary className="cursor-pointer font-semibold">Transcripción importada</summary><p className="mt-2 whitespace-pre-wrap">{item.transcriptText}</p></details>}
+              {item.attachments?.map((file) => <a key={file.uuid} href={crmAttachmentUrl(file.uuid)} className="mt-2 block text-xs font-semibold text-[#3458d8]">Descargar {file.filename}</a>)}
+              {item.nextFollowupAt && <div className="mt-2 flex items-center gap-1 text-xs text-[#3458d8]"><CalendarClock size={14} /> Seguimiento: {formatCrmDate(item.nextFollowupAt, true)}</div>}
+            </div>)}
+            {!lead.interactions?.length && <p className="text-sm text-slate-500">Aún no hay gestiones registradas.</p>}
+          </div>
+        </section>
+
+        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <h2 className="text-lg font-semibold text-[#132451]">Citas</h2>
+          <div className="mt-4 space-y-3">{lead.appointments?.map((item) => <div key={item.uuid} className="rounded-xl border border-slate-100 p-4">
+            <div className="text-sm font-semibold text-slate-800">{formatCrmDate(item.scheduledAt, true)} · {item.status === "SCHEDULED" ? "Programada" : item.status === "COMPLETED" ? "Realizada" : "Cancelada"}</div>
+            {item.notes && <p className="mt-1 whitespace-pre-wrap text-sm text-slate-600">{item.notes}</p>}
+            <div className="mt-2 text-xs text-slate-400">{item.advisorEmail}</div>
+            {actor?.role === "ADVISOR" && item.status === "SCHEDULED" && <div className="mt-3 flex gap-3 text-xs font-semibold text-[#3458d8]"><button disabled={activityBusy} onClick={() => changeActivity("appointment", item.uuid, "COMPLETED")}>Marcar realizada</button><button disabled={activityBusy} onClick={() => changeActivity("appointment", item.uuid, "CANCELLED")}>Cancelar</button></div>}
+          </div>)}{!lead.appointments?.length && <p className="text-sm text-slate-500">Aún no hay citas.</p>}</div>
+        </section>
+
+        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <h2 className="text-lg font-semibold text-[#132451]">Propuestas</h2>
+          <div className="mt-4 space-y-3">{lead.proposals?.map((item) => <div key={item.uuid} className="rounded-xl border border-slate-100 p-4">
+            <div className="flex flex-wrap justify-between gap-2"><strong className="text-sm text-slate-800">{new Intl.NumberFormat("es-PE", { style: "currency", currency: item.currency }).format(Number(item.amount))}</strong><span className="text-xs font-semibold text-[#3458d8]">{({ DRAFT: "Borrador", SENT: "Enviada", ACCEPTED: "Aceptada", REJECTED: "Rechazada" } as Record<string, string>)[item.status] || item.status}</span></div>
+            <p className="mt-1 text-xs text-slate-500">{item.termMonths ? `${item.termMonths} meses` : "Sin plazo"} · Vigencia: {item.validUntil ? formatCrmDate(item.validUntil) : "Sin fecha"}</p>
+            {item.notes && <p className="mt-2 whitespace-pre-wrap text-sm text-slate-600">{item.notes}</p>}
+            {item.attachments?.map((file) => <a key={file.uuid} href={crmAttachmentUrl(file.uuid)} className="mt-2 block text-xs font-semibold text-[#3458d8]">Descargar {file.filename}</a>)}
+            {actor?.role === "ADVISOR" && (item.status === "DRAFT" || item.status === "SENT") && <div className="mt-3 flex flex-wrap gap-3 text-xs font-semibold text-[#3458d8]">
+              {item.status === "DRAFT" && <button disabled={activityBusy} onClick={() => changeActivity("proposal", item.uuid, "SENT")}>Marcar enviada</button>}
+              {item.status === "SENT" && <><button disabled={activityBusy} onClick={() => changeActivity("proposal", item.uuid, "ACCEPTED")}>Aceptada</button><button disabled={activityBusy} onClick={() => changeActivity("proposal", item.uuid, "REJECTED")}>Rechazada</button></>}
+            </div>}
+          </div>)}{!lead.proposals?.length && <p className="text-sm text-slate-500">Aún no hay propuestas.</p>}</div>
+        </section>
+      </div>
+
+      <div className="space-y-6">
+        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"><h2 className="text-lg font-semibold text-[#132451]">Próximo paso</h2>
+          <div className="mt-4 flex items-center gap-3 rounded-xl bg-amber-50 p-4"><CalendarClock size={21} className="text-amber-600" /><div><div className="text-xs font-medium text-amber-700">Seguimiento programado</div><div className="mt-1 text-sm font-semibold text-slate-800">{formatCrmDate(lead.nextFollowupAt, true)}</div></div></div>
+          <p className="mt-4 text-xs text-slate-500">Último contacto registrado: {formatCrmDate(lead.lastContactedAt, true)}</p>
+        </section>
+
+        {actor?.role === "ADVISOR" && lead.status !== "DO_NOT_CONTACT" && <section id="registrar-gestion" className="scroll-mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"><h2 className="text-lg font-semibold text-[#132451]">Registrar gestión</h2><p className="mt-1 text-sm text-slate-500">Completa el resultado después de contactar al prospecto.</p>
+          <form onSubmit={submit} className="mt-5 space-y-4">
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
+              <label className="text-xs font-semibold text-slate-600">Canal<select value={channel} onChange={(event) => setChannel(event.target.value)} className="mt-1.5 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-normal outline-none focus:border-[#4268e8]">{channels.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+              <label className="text-xs font-semibold text-slate-600">Resultado<select value={outcome} onChange={(event) => setOutcome(event.target.value)} className="mt-1.5 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-normal outline-none focus:border-[#4268e8]">{Object.entries(CRM_OUTCOME_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+            </div>
+            <label className="block text-xs font-semibold text-slate-600">Resumen breve<input required maxLength={220} value={summary} onChange={(event) => setSummary(event.target.value)} placeholder="Ej. Solicitó información del plan en soles" className="mt-1.5 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-normal outline-none focus:border-[#4268e8]" /><span className="mt-1 block text-right text-[11px] font-normal text-slate-400">{summary.length}/220</span></label>
+            <label className="block text-xs font-semibold text-slate-600">Detalles y acuerdos<textarea rows={4} value={details} onChange={(event) => setDetails(event.target.value)} placeholder="Puntos relevantes, objeciones y siguiente acción" className="mt-1.5 w-full resize-y rounded-xl border border-slate-200 p-3 text-sm font-normal outline-none focus:border-[#4268e8]" /></label>
+            <label className="block text-xs font-semibold text-slate-600">Transcripción de WhatsApp (opcional)<textarea rows={5} value={transcript} onChange={(event) => setTranscript(event.target.value)} placeholder="Pega aquí la conversación exportada o un fragmento relevante" className="mt-1.5 w-full resize-y rounded-xl border border-slate-200 p-3 text-sm font-normal outline-none focus:border-[#4268e8]" /></label>
+            <label className="block text-xs font-semibold text-slate-600">Captura o archivo de conversación (opcional)<input type="file" accept="image/png,image/jpeg,application/pdf,text/plain" onChange={(event) => setInteractionFile(event.target.files?.[0] || null)} className="mt-1.5 block w-full text-xs font-normal" /><span className="mt-1 block font-normal text-slate-400">PNG, JPG, PDF o TXT · máximo 5 MB.</span></label>
+            <label className="block text-xs font-semibold text-slate-600">Próximo seguimiento<input type="datetime-local" value={followup} onChange={(event) => setFollowup(event.target.value)} className="mt-1.5 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-normal outline-none focus:border-[#4268e8]" /></label>
+            <label className="block text-xs font-semibold text-slate-600">Cambiar etapa del funnel<select value={status} onChange={(event) => setStatus(event.target.value)} className="mt-1.5 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-normal outline-none focus:border-[#4268e8]"><option value="">Mantener etapa actual</option>{Object.entries(CRM_STATUS_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+            {saveError && <div role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{saveError}</div>}
+            {saved && <div role="status" className="flex items-center gap-2 rounded-lg bg-emerald-50 p-3 text-sm text-emerald-700"><CheckCircle2 size={17} /> Gestión guardada correctamente.</div>}
+            <button type="submit" disabled={saving} className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#3458d8] text-sm font-semibold text-white hover:bg-[#274ac4] disabled:opacity-60"><Send size={16} /> {saving ? "Guardando…" : "Guardar gestión"}</button>
+          </form>
+        </section>}
+        {actor?.role === "ADVISOR" && lead.status !== "DO_NOT_CONTACT" && <>
+          <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"><h2 className="text-lg font-semibold text-[#132451]">Programar cita</h2>
+            <form onSubmit={saveAppointment} className="mt-4 space-y-4">
+              <label className="block text-xs font-semibold text-slate-600">Fecha y hora<input required type="datetime-local" value={appointmentAt} onChange={(event) => setAppointmentAt(event.target.value)} className="mt-1.5 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-normal" /></label>
+              <label className="block text-xs font-semibold text-slate-600">Notas<textarea rows={3} value={appointmentNotes} onChange={(event) => setAppointmentNotes(event.target.value)} className="mt-1.5 w-full rounded-xl border border-slate-200 p-3 text-sm font-normal" /></label>
+              <button disabled={activityBusy} className="h-11 w-full rounded-xl bg-[#3458d8] text-sm font-semibold text-white disabled:opacity-60">Guardar cita</button>
+            </form>
+          </section>
+          <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"><h2 className="text-lg font-semibold text-[#132451]">Crear propuesta</h2>
+            <form onSubmit={saveProposal} className="mt-4 space-y-4">
+              <div className="grid grid-cols-[1fr_100px] gap-3"><label className="text-xs font-semibold text-slate-600">Monto<input required type="number" min="0.01" step="0.01" value={proposalAmount} onChange={(event) => setProposalAmount(event.target.value)} className="mt-1.5 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-normal" /></label><label className="text-xs font-semibold text-slate-600">Moneda<select value={proposalCurrency} onChange={(event) => setProposalCurrency(event.target.value)} className="mt-1.5 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-normal"><option>PEN</option><option>USD</option></select></label></div>
+              <div className="grid grid-cols-2 gap-3"><label className="text-xs font-semibold text-slate-600">Plazo (meses)<input type="number" min="1" max="600" value={proposalTerm} onChange={(event) => setProposalTerm(event.target.value)} className="mt-1.5 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-normal" /></label><label className="text-xs font-semibold text-slate-600">Vigencia<input type="date" value={proposalUntil} onChange={(event) => setProposalUntil(event.target.value)} className="mt-1.5 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-normal" /></label></div>
+              <label className="block text-xs font-semibold text-slate-600">Notas<textarea rows={3} value={proposalNotes} onChange={(event) => setProposalNotes(event.target.value)} className="mt-1.5 w-full rounded-xl border border-slate-200 p-3 text-sm font-normal" /></label>
+              <label className="block text-xs font-semibold text-slate-600">PDF de la propuesta<input type="file" accept="application/pdf" onChange={(event) => setProposalFile(event.target.files?.[0] || null)} className="mt-1.5 block w-full text-xs font-normal" /><span className="mt-1 block font-normal text-slate-400">Máximo 5 MB.</span></label>
+              <button disabled={activityBusy} className="h-11 w-full rounded-xl bg-[#3458d8] text-sm font-semibold text-white disabled:opacity-60">Guardar borrador</button>
+            </form>
+          </section>
+          {activityError && <div role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{activityError}</div>}
+        </>}
+        {actor?.role === "ADMIN" && <div className="rounded-2xl border border-blue-100 bg-blue-50 p-5 text-sm text-blue-800">Vista de supervisión. El asesor asignado registra las gestiones de este prospecto.</div>}
+      </div>
+    </div>
+  </div>;
+}
