@@ -133,14 +133,14 @@ export default function CrmLeadDetailPage() {
   }
 
   if (loading) return <div className="crm-panel p-8 text-sm text-slate-500">Cargando ficha del prospecto…</div>;
-  if (loadError || !lead) return <div className="crm-panel p-8"><p className="text-sm text-slate-600">{loadError || "No tienes acceso a este prospecto o ya no existe."}</p><Link href="/leads" className="mt-4 inline-block text-sm font-semibold text-[#32302d]">Volver a prospectos</Link></div>;
+  if (loadError || !lead) return <div className="crm-panel p-8"><p className="text-sm text-slate-600">{loadError || "No tienes acceso a este prospecto o ya no existe."}</p><Link href="/leads" className="mt-4 inline-block text-sm font-semibold text-[#111111]">Volver a prospectos</Link></div>;
 
   const whatsapp = lead.status !== "DO_NOT_CONTACT" ? whatsappUrl(lead) : null;
   const latest = lead.latestSimulation;
   const amount = latest ? new Intl.NumberFormat("es-PE", { style: "currency", currency: latest.currency }).format(Number(latest.capitalAmount)) : "—";
 
   return <div className="space-y-7">
-    <Link href="/leads" className="inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-[#32302d]"><ArrowLeft size={16} /> Volver a prospectos</Link>
+    <Link href="/leads" className="inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-[#111111]"><ArrowLeft size={16} /> Volver a prospectos</Link>
     <div className="flex flex-wrap items-start justify-between gap-5">
       <div><div className="crm-kicker">Ficha del prospecto</div>
         <h1 className="mt-2 crm-title">{lead.fullName || lead.email || "Prospecto sin nombre"}</h1>
@@ -154,8 +154,8 @@ export default function CrmLeadDetailPage() {
         <section className="crm-panel p-6">
           <h2 className="crm-section-title">Datos de contacto</h2>
           <div className="mt-5 grid gap-4 sm:grid-cols-2">
-            <div className="border border-[#383632] bg-[#edf6fd] p-4"><div className="flex items-center gap-2 text-xs font-medium text-slate-500"><Phone size={15} /> Teléfono</div><div className="mt-2 text-sm font-semibold text-slate-800">{lead.phone ? `${lead.countryPrefix} ${lead.phone}` : "No registrado"}</div></div>
-            <div className="border border-[#383632] bg-[#edf6fd] p-4"><div className="flex items-center gap-2 text-xs font-medium text-slate-500"><Mail size={15} /> Correo</div><div className="mt-2 break-all text-sm font-semibold text-slate-800">{lead.email || "No registrado"}</div></div>
+            <div className="border border-[#111111] bg-[#eef2ff] p-4"><div className="flex items-center gap-2 text-xs font-medium text-slate-500"><Phone size={15} /> Teléfono</div><div className="mt-2 text-sm font-semibold text-slate-800">{lead.phone ? `${lead.countryPrefix} ${lead.phone}` : "No registrado"}</div></div>
+            <div className="border border-[#111111] bg-[#eef2ff] p-4"><div className="flex items-center gap-2 text-xs font-medium text-slate-500"><Mail size={15} /> Correo</div><div className="mt-2 break-all text-sm font-semibold text-slate-800">{lead.email || "No registrado"}</div></div>
           </div>
           <div className="mt-5 flex flex-wrap gap-3">
             {whatsapp && <a href={whatsapp} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 crm-button crm-button-green"><MessageCircle size={17} /> Abrir WhatsApp</a>}
@@ -173,20 +173,20 @@ export default function CrmLeadDetailPage() {
             <div><div className="text-xs text-slate-500">Asesor responsable</div><div className="mt-1 text-sm font-semibold text-slate-800">{lead.advisorEmail || "Sin asignar"}</div></div>
             <div><div className="text-xs text-slate-500">Simulaciones</div><div className="mt-1 text-sm font-semibold text-slate-800">{lead.simulationsCount}</div></div>
           </div>
-          {latest && <div className="mt-5 border border-[#383632] bg-[#d9ebfb] p-4"><div className="text-xs font-semibold uppercase tracking-wider text-[#32302d]">Última simulación</div><div className="mt-2 crm-section-title">{amount}</div><div className="mt-1 text-sm text-slate-600">{latest.fundPlanNameSnapshot || "Plan de inversión"} · {latest.termMonths} meses</div><div className="mt-1 text-xs text-slate-500">{formatCrmDate(latest.createdAt)}</div></div>}
-          {lead.notes && <div className="mt-5 border-t border-[#d2cdc4] pt-4"><div className="text-xs text-slate-500">Notas del prospecto</div><p className="mt-2 whitespace-pre-wrap text-sm text-slate-700">{lead.notes}</p></div>}
+          {latest && <div className="mt-5 border border-[#111111] bg-[#e2e8ff] p-4"><div className="text-xs font-semibold uppercase tracking-wider text-[#111111]">Última simulación</div><div className="mt-2 crm-section-title">{amount}</div><div className="mt-1 text-sm text-slate-600">{latest.fundPlanNameSnapshot || "Plan de inversión"} · {latest.termMonths} meses</div><div className="mt-1 text-xs text-slate-500">{formatCrmDate(latest.createdAt)}</div></div>}
+          {lead.notes && <div className="mt-5 border-t border-[#e5e7eb] pt-4"><div className="text-xs text-slate-500">Notas del prospecto</div><p className="mt-2 whitespace-pre-wrap text-sm text-slate-700">{lead.notes}</p></div>}
         </section>
 
         <section className="crm-panel p-6">
           <h2 className="crm-section-title">Historial de gestiones</h2>
           <div className="mt-5 space-y-4">
-            {lead.interactions?.map((item) => <div key={item.uuid} className="relative border-l-2 border-[#383632] pl-5"><div className="absolute -left-[6px] top-1 h-2.5 w-2.5 rounded-full bg-[#f2a35e]" />
+            {lead.interactions?.map((item) => <div key={item.uuid} className="relative border-l-2 border-[#111111] pl-5"><div className="absolute -left-[6px] top-1 h-2.5 w-2.5 rounded-full bg-[#34D399]" />
               <div className="flex flex-wrap items-center gap-x-2 gap-y-1"><div className="text-sm font-semibold text-slate-800">{item.summary}</div><span className="text-xs text-slate-400">{formatCrmDate(item.occurredAt, true)}</span></div>
               <div className="mt-1 text-xs text-slate-500">{item.interactionType} · {CRM_OUTCOME_LABELS[item.outcome] || item.outcome} · {item.advisorEmail}</div>
               {item.details && <p className="mt-2 whitespace-pre-wrap text-sm text-slate-600">{item.details}</p>}
-              {item.transcriptText && <details className="mt-2 border border-[#b9b4aa] bg-[#f3f0ea] p-3 text-xs text-slate-600"><summary className="cursor-pointer font-semibold">Transcripción importada</summary><p className="mt-2 whitespace-pre-wrap">{item.transcriptText}</p></details>}
-              {item.attachments?.map((file) => <a key={file.uuid} href={crmAttachmentUrl(file.uuid)} className="mt-2 block text-xs font-semibold text-[#32302d]">Descargar {file.filename}</a>)}
-              {item.nextFollowupAt && <div className="mt-2 flex items-center gap-1 text-xs text-[#32302d]"><CalendarClock size={14} /> Seguimiento: {formatCrmDate(item.nextFollowupAt, true)}</div>}
+              {item.transcriptText && <details className="mt-2 border border-[#d1d5db] bg-[#f8f9fc] p-3 text-xs text-slate-600"><summary className="cursor-pointer font-semibold">Transcripción importada</summary><p className="mt-2 whitespace-pre-wrap">{item.transcriptText}</p></details>}
+              {item.attachments?.map((file) => <a key={file.uuid} href={crmAttachmentUrl(file.uuid)} className="mt-2 block text-xs font-semibold text-[#111111]">Descargar {file.filename}</a>)}
+              {item.nextFollowupAt && <div className="mt-2 flex items-center gap-1 text-xs text-[#111111]"><CalendarClock size={14} /> Seguimiento: {formatCrmDate(item.nextFollowupAt, true)}</div>}
             </div>)}
             {!lead.interactions?.length && <p className="text-sm text-slate-500">Aún no hay gestiones registradas.</p>}
           </div>
@@ -194,22 +194,22 @@ export default function CrmLeadDetailPage() {
 
         <section className="crm-panel p-6">
           <h2 className="crm-section-title">Citas</h2>
-          <div className="mt-4 space-y-3">{lead.appointments?.map((item) => <div key={item.uuid} className="border border-[#b9b4aa] p-4">
+          <div className="mt-4 space-y-3">{lead.appointments?.map((item) => <div key={item.uuid} className="border border-[#d1d5db] p-4">
             <div className="text-sm font-semibold text-slate-800">{formatCrmDate(item.scheduledAt, true)} · {item.status === "SCHEDULED" ? "Programada" : item.status === "COMPLETED" ? "Realizada" : "Cancelada"}</div>
             {item.notes && <p className="mt-1 whitespace-pre-wrap text-sm text-slate-600">{item.notes}</p>}
             <div className="mt-2 text-xs text-slate-400">{item.advisorEmail}</div>
-            {actor?.role === "ADVISOR" && item.status === "SCHEDULED" && <div className="mt-3 flex gap-3 text-xs font-semibold text-[#32302d]"><button disabled={activityBusy} onClick={() => changeActivity("appointment", item.uuid, "COMPLETED")}>Marcar realizada</button><button disabled={activityBusy} onClick={() => changeActivity("appointment", item.uuid, "CANCELLED")}>Cancelar</button></div>}
+            {actor?.role === "ADVISOR" && item.status === "SCHEDULED" && <div className="mt-3 flex gap-3 text-xs font-semibold text-[#111111]"><button disabled={activityBusy} onClick={() => changeActivity("appointment", item.uuid, "COMPLETED")}>Marcar realizada</button><button disabled={activityBusy} onClick={() => changeActivity("appointment", item.uuid, "CANCELLED")}>Cancelar</button></div>}
           </div>)}{!lead.appointments?.length && <p className="text-sm text-slate-500">Aún no hay citas.</p>}</div>
         </section>
 
         <section className="crm-panel p-6">
           <h2 className="crm-section-title">Propuestas</h2>
-          <div className="mt-4 space-y-3">{lead.proposals?.map((item) => <div key={item.uuid} className="border border-[#b9b4aa] p-4">
-            <div className="flex flex-wrap justify-between gap-2"><strong className="text-sm text-slate-800">{new Intl.NumberFormat("es-PE", { style: "currency", currency: item.currency }).format(Number(item.amount))}</strong><span className="text-xs font-semibold text-[#32302d]">{({ DRAFT: "Borrador", SENT: "Enviada", ACCEPTED: "Aceptada", REJECTED: "Rechazada" } as Record<string, string>)[item.status] || item.status}</span></div>
+          <div className="mt-4 space-y-3">{lead.proposals?.map((item) => <div key={item.uuid} className="border border-[#d1d5db] p-4">
+            <div className="flex flex-wrap justify-between gap-2"><strong className="text-sm text-slate-800">{new Intl.NumberFormat("es-PE", { style: "currency", currency: item.currency }).format(Number(item.amount))}</strong><span className="text-xs font-semibold text-[#111111]">{({ DRAFT: "Borrador", SENT: "Enviada", ACCEPTED: "Aceptada", REJECTED: "Rechazada" } as Record<string, string>)[item.status] || item.status}</span></div>
             <p className="mt-1 text-xs text-slate-500">{item.termMonths ? `${item.termMonths} meses` : "Sin plazo"} · Vigencia: {item.validUntil ? formatCrmDate(item.validUntil) : "Sin fecha"}</p>
             {item.notes && <p className="mt-2 whitespace-pre-wrap text-sm text-slate-600">{item.notes}</p>}
-            {item.attachments?.map((file) => <a key={file.uuid} href={crmAttachmentUrl(file.uuid)} className="mt-2 block text-xs font-semibold text-[#32302d]">Descargar {file.filename}</a>)}
-            {actor?.role === "ADVISOR" && (item.status === "DRAFT" || item.status === "SENT") && <div className="mt-3 flex flex-wrap gap-3 text-xs font-semibold text-[#32302d]">
+            {item.attachments?.map((file) => <a key={file.uuid} href={crmAttachmentUrl(file.uuid)} className="mt-2 block text-xs font-semibold text-[#111111]">Descargar {file.filename}</a>)}
+            {actor?.role === "ADVISOR" && (item.status === "DRAFT" || item.status === "SENT") && <div className="mt-3 flex flex-wrap gap-3 text-xs font-semibold text-[#111111]">
               {item.status === "DRAFT" && <button disabled={activityBusy} onClick={() => changeActivity("proposal", item.uuid, "SENT")}>Marcar enviada</button>}
               {item.status === "SENT" && <><button disabled={activityBusy} onClick={() => changeActivity("proposal", item.uuid, "ACCEPTED")}>Aceptada</button><button disabled={activityBusy} onClick={() => changeActivity("proposal", item.uuid, "REJECTED")}>Rechazada</button></>}
             </div>}
@@ -219,24 +219,24 @@ export default function CrmLeadDetailPage() {
 
       <div className="space-y-6">
         <section className="crm-panel p-6"><h2 className="crm-section-title">Próximo paso</h2>
-          <div className="mt-4 flex items-center gap-3 border border-[#383632] bg-[#fce0be] p-4"><CalendarClock size={21} className="text-amber-600" /><div><div className="text-xs font-medium text-amber-700">Seguimiento programado</div><div className="mt-1 text-sm font-semibold text-slate-800">{formatCrmDate(lead.nextFollowupAt, true)}</div></div></div>
+          <div className="mt-4 flex items-center gap-3 border border-[#111111] bg-[#fef3c7] p-4"><CalendarClock size={21} className="text-amber-600" /><div><div className="text-xs font-medium text-amber-700">Seguimiento programado</div><div className="mt-1 text-sm font-semibold text-slate-800">{formatCrmDate(lead.nextFollowupAt, true)}</div></div></div>
           <p className="mt-4 text-xs text-slate-500">Último contacto registrado: {formatCrmDate(lead.lastContactedAt, true)}</p>
         </section>
 
         {actor?.role === "ADVISOR" && lead.status !== "DO_NOT_CONTACT" && <section id="registrar-gestion" className="scroll-mt-6 crm-panel p-6"><h2 className="crm-section-title">Registrar gestión</h2><p className="mt-1 text-sm text-slate-500">Completa el resultado después de contactar al prospecto.</p>
           <form onSubmit={submit} className="mt-5 space-y-4">
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
-              <label className="text-xs font-semibold text-slate-600">Canal<select value={channel} onChange={(event) => setChannel(event.target.value)} className="mt-1.5 h-11 w-full crm-field px-3 text-sm font-normal outline-none focus:border-[#32302d] focus:ring-2 focus:ring-[#acd3f7]">{channels.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
-              <label className="text-xs font-semibold text-slate-600">Resultado<select value={outcome} onChange={(event) => setOutcome(event.target.value)} className="mt-1.5 h-11 w-full crm-field px-3 text-sm font-normal outline-none focus:border-[#32302d] focus:ring-2 focus:ring-[#acd3f7]">{Object.entries(CRM_OUTCOME_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+              <label className="text-xs font-semibold text-slate-600">Canal<select value={channel} onChange={(event) => setChannel(event.target.value)} className="mt-1.5 h-11 w-full crm-field px-3 text-sm font-normal outline-none focus:border-[#111111] focus:ring-2 focus:ring-[#a5b4fc]">{channels.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+              <label className="text-xs font-semibold text-slate-600">Resultado<select value={outcome} onChange={(event) => setOutcome(event.target.value)} className="mt-1.5 h-11 w-full crm-field px-3 text-sm font-normal outline-none focus:border-[#111111] focus:ring-2 focus:ring-[#a5b4fc]">{Object.entries(CRM_OUTCOME_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
             </div>
-            <label className="block text-xs font-semibold text-slate-600">Resumen breve<input required maxLength={220} value={summary} onChange={(event) => setSummary(event.target.value)} placeholder="Ej. Solicitó información del plan en soles" className="mt-1.5 h-11 w-full crm-field px-3 text-sm font-normal outline-none focus:border-[#32302d] focus:ring-2 focus:ring-[#acd3f7]" /><span className="mt-1 block text-right text-[11px] font-normal text-slate-400">{summary.length}/220</span></label>
-            <label className="block text-xs font-semibold text-slate-600">Detalles y acuerdos<textarea rows={4} value={details} onChange={(event) => setDetails(event.target.value)} placeholder="Puntos relevantes, objeciones y siguiente acción" className="mt-1.5 w-full resize-y crm-field p-3 text-sm font-normal outline-none focus:border-[#32302d] focus:ring-2 focus:ring-[#acd3f7]" /></label>
-            <label className="block text-xs font-semibold text-slate-600">Transcripción de WhatsApp (opcional)<textarea rows={5} value={transcript} onChange={(event) => setTranscript(event.target.value)} placeholder="Pega aquí la conversación exportada o un fragmento relevante" className="mt-1.5 w-full resize-y crm-field p-3 text-sm font-normal outline-none focus:border-[#32302d] focus:ring-2 focus:ring-[#acd3f7]" /></label>
+            <label className="block text-xs font-semibold text-slate-600">Resumen breve<input required maxLength={220} value={summary} onChange={(event) => setSummary(event.target.value)} placeholder="Ej. Solicitó información del plan en soles" className="mt-1.5 h-11 w-full crm-field px-3 text-sm font-normal outline-none focus:border-[#111111] focus:ring-2 focus:ring-[#a5b4fc]" /><span className="mt-1 block text-right text-[11px] font-normal text-slate-400">{summary.length}/220</span></label>
+            <label className="block text-xs font-semibold text-slate-600">Detalles y acuerdos<textarea rows={4} value={details} onChange={(event) => setDetails(event.target.value)} placeholder="Puntos relevantes, objeciones y siguiente acción" className="mt-1.5 w-full resize-y crm-field p-3 text-sm font-normal outline-none focus:border-[#111111] focus:ring-2 focus:ring-[#a5b4fc]" /></label>
+            <label className="block text-xs font-semibold text-slate-600">Transcripción de WhatsApp (opcional)<textarea rows={5} value={transcript} onChange={(event) => setTranscript(event.target.value)} placeholder="Pega aquí la conversación exportada o un fragmento relevante" className="mt-1.5 w-full resize-y crm-field p-3 text-sm font-normal outline-none focus:border-[#111111] focus:ring-2 focus:ring-[#a5b4fc]" /></label>
             <label className="block text-xs font-semibold text-slate-600">Captura o archivo de conversación (opcional)<input type="file" accept="image/png,image/jpeg,application/pdf,text/plain" onChange={(event) => setInteractionFile(event.target.files?.[0] || null)} className="mt-1.5 block w-full text-xs font-normal" /><span className="mt-1 block font-normal text-slate-400">PNG, JPG, PDF o TXT · máximo 5 MB.</span></label>
-            <label className="block text-xs font-semibold text-slate-600">Próximo seguimiento<input type="datetime-local" value={followup} onChange={(event) => setFollowup(event.target.value)} className="mt-1.5 h-11 w-full crm-field px-3 text-sm font-normal outline-none focus:border-[#32302d] focus:ring-2 focus:ring-[#acd3f7]" /></label>
-            <label className="block text-xs font-semibold text-slate-600">Cambiar etapa del funnel<select value={status} onChange={(event) => setStatus(event.target.value)} className="mt-1.5 h-11 w-full crm-field px-3 text-sm font-normal outline-none focus:border-[#32302d] focus:ring-2 focus:ring-[#acd3f7]"><option value="">Mantener etapa actual</option>{Object.entries(CRM_STATUS_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
-            {saveError && <div role="alert" className="border border-red-700 bg-[#f8d8d0] p-3 text-sm text-red-700">{saveError}</div>}
-            {saved && <div role="status" className="flex items-center gap-2 border border-[#383632] bg-[#c8f3e8] p-3 text-sm text-emerald-700"><CheckCircle2 size={17} /> Gestión guardada correctamente.</div>}
+            <label className="block text-xs font-semibold text-slate-600">Próximo seguimiento<input type="datetime-local" value={followup} onChange={(event) => setFollowup(event.target.value)} className="mt-1.5 h-11 w-full crm-field px-3 text-sm font-normal outline-none focus:border-[#111111] focus:ring-2 focus:ring-[#a5b4fc]" /></label>
+            <label className="block text-xs font-semibold text-slate-600">Cambiar etapa del funnel<select value={status} onChange={(event) => setStatus(event.target.value)} className="mt-1.5 h-11 w-full crm-field px-3 text-sm font-normal outline-none focus:border-[#111111] focus:ring-2 focus:ring-[#a5b4fc]"><option value="">Mantener etapa actual</option>{Object.entries(CRM_STATUS_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+            {saveError && <div role="alert" className="border border-red-700 bg-[#fee2e2] p-3 text-sm text-red-700">{saveError}</div>}
+            {saved && <div role="status" className="flex items-center gap-2 border border-[#111111] bg-[#d1fae5] p-3 text-sm text-emerald-700"><CheckCircle2 size={17} /> Gestión guardada correctamente.</div>}
             <button type="submit" disabled={saving} className="flex h-11 w-full items-center justify-center gap-2 crm-button"><Send size={16} /> {saving ? "Guardando…" : "Guardar gestión"}</button>
           </form>
         </section>}
@@ -257,9 +257,9 @@ export default function CrmLeadDetailPage() {
               <button disabled={activityBusy} className="h-11 w-full crm-button">Guardar borrador</button>
             </form>
           </section>
-          {activityError && <div role="alert" className="border border-red-700 bg-[#f8d8d0] p-3 text-sm text-red-700">{activityError}</div>}
+          {activityError && <div role="alert" className="border border-red-700 bg-[#fee2e2] p-3 text-sm text-red-700">{activityError}</div>}
         </>}
-        {actor?.role === "ADMIN" && <div className="border border-[#383632] bg-[#d9ebfb] p-5 text-sm text-[#32302d]">Vista de supervisión. El asesor asignado registra las gestiones de este prospecto.</div>}
+        {actor?.role === "ADMIN" && <div className="border border-[#111111] bg-[#e2e8ff] p-5 text-sm text-[#111111]">Vista de supervisión. El asesor asignado registra las gestiones de este prospecto.</div>}
       </div>
     </div>
   </div>;

@@ -32,7 +32,7 @@ export default function CrmHomePage() {
       <Link href="/leads" className="inline-flex items-center gap-2 crm-button">Ver prospectos <ArrowRight size={17} /></Link>
     </div>
 
-    {error && <div className="border border-red-700 bg-[#f8d8d0] p-4 text-sm text-red-700">{error}</div>}
+    {error && <div className="border border-red-700 bg-[#fee2e2] p-4 text-sm text-red-700">{error}</div>}
     {!dashboard && !error && <div className="crm-panel p-8 text-sm text-slate-500">Cargando indicadores…</div>}
     {dashboard && <>
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -47,7 +47,7 @@ export default function CrmHomePage() {
         </div>
         <FunnelChart dashboard={dashboard} />
       </div>
-      <Link href="/leads" className="inline-flex items-center gap-2 text-sm font-semibold text-[#32302d] hover:underline"><Users size={16} /> Explorar todos los prospectos <ArrowRight size={15} /></Link>
+      <Link href="/leads" className="inline-flex items-center gap-2 text-sm font-semibold text-[#111111] hover:underline"><Users size={16} /> Explorar todos los prospectos <ArrowRight size={15} /></Link>
     </>}
   </div>;
 }
