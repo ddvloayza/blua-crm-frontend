@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Download, TrendingUp } from "lucide-react";
 import { useCrm } from "@/context/CrmContext";
 import { AdminOperations } from "@/components/crm/AdminOperations";
@@ -9,6 +10,7 @@ import { CrmAdvisor, CrmDashboard, getCrmAdvisors, getCrmDashboard } from "@/lib
 
 export default function CrmAdminPage() {
   const { actor } = useCrm();
+  const router = useRouter();
   const [advisors, setAdvisors] = useState<CrmAdvisor[]>([]);
   const [selected, setSelected] = useState("");
   const [dashboard, setDashboard] = useState<CrmDashboard | null>(null);
@@ -17,6 +19,8 @@ export default function CrmAdminPage() {
   const [advisorsLoaded, setAdvisorsLoaded] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState("");
+
+  useEffect(() => { if (actor?.role === "ADVISOR") router.replace("/"); }, [actor?.role, router]);
 
   useEffect(() => {
     if (actor?.role !== "ADMIN") return;

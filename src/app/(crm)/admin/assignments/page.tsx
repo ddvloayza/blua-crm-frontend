@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useCrm } from "@/context/CrmContext";
 import { CrmAdvisor, CrmLead, assignCrmLead, getCrmAdvisors, getCrmLeads } from "@/lib/crm/api";
@@ -8,6 +9,7 @@ import { StatusBadge } from "@/components/crm/CrmUI";
 
 export default function AssignmentsPage() {
   const { actor } = useCrm();
+  const router = useRouter();
   const [advisors, setAdvisors] = useState<CrmAdvisor[]>([]);
   const [leads, setLeads] = useState<CrmLead[]>([]);
   const [unassigned, setUnassigned] = useState(true);
@@ -18,6 +20,7 @@ export default function AssignmentsPage() {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [reload, setReload] = useState(0);
+  useEffect(() => { if (actor?.role === "ADVISOR") router.replace("/"); }, [actor?.role, router]);
   useEffect(() => { if (actor?.role === "ADMIN") getCrmAdvisors().then(setAdvisors).catch((e) => setError(e.message)); }, [actor?.role]);
   useEffect(() => {
     if (actor?.role !== "ADMIN") return;
