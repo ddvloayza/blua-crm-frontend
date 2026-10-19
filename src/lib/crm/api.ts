@@ -13,10 +13,54 @@ export type CrmInteraction = {
   attachments: CrmAttachment[];
   occurredAt: string;
   nextFollowupAt: string | null;
+  nextAction: string;
 };
 export type CrmAttachment = { uuid: string; filename: string; contentType: string; size: number };
 export type CrmAppointment = { uuid: string; scheduledAt: string; status: string; notes: string; advisorEmail: string };
 export type CrmProposal = { uuid: string; amount: string; currency: string; termMonths: number | null; validUntil: string | null; status: string; notes: string; createdAt: string; advisorEmail: string; attachments: CrmAttachment[] };
+export type CrmSimulationInstallment = {
+  number: number;
+  dueDate: string;
+  interest: string;
+  principal: string;
+  bonus: string;
+  total: string;
+};
+export type CrmSimulation = {
+  uuid: string;
+  capitalAmount: string;
+  currency: string;
+  termMonths: number;
+  frequency: "MONTHLY" | "QUARTERLY";
+  startDate: string;
+  fundPlanNameSnapshot: string;
+  annualRatePercent: string;
+  appliedAnnualRatePercent: string;
+  periodRatePercent: string;
+  couponCodeSnapshot: string;
+  couponBenefitTypeSnapshot: string;
+  couponBenefitValueSnapshot: string | null;
+  estimatedTotalInterest: string;
+  estimatedBonus: string;
+  estimatedTotalReturn: string;
+  createdAt: string;
+  createdByEmail: string | null;
+  schedule: CrmSimulationInstallment[];
+};
+export type CrmSimulationPlan = {
+  uuid: string;
+  fundId: string;
+  name: string;
+  fundName: string;
+  currency: string;
+  frequency: "MONTHLY" | "QUARTERLY";
+  termMonths: number;
+  minAmount: string;
+  maxAmount: string | null;
+  annualRatePercent: string;
+  periodRatePercent: string;
+};
+
 export type CrmLead = {
   uuid: string;
   fullName: string;
@@ -33,6 +77,7 @@ export type CrmLead = {
   nextFollowupAt: string | null;
   advisorEmail: string | null;
   simulationsCount: number;
+  advisorSimulationsCount: number;
   latestSimulation?: {
     capitalAmount: string;
     currency: string;
@@ -44,7 +89,13 @@ export type CrmLead = {
   interactions?: CrmInteraction[];
   appointments?: CrmAppointment[];
   proposals?: CrmProposal[];
+  statusHistory?: CrmStatusEvent[];
 };
+export type CrmStatusEvent = { previousStatus: string; status: string; changedAt: string; isBaseline: boolean; advisorEmail: string | null };
+export type CrmWorkItem = { lead: CrmLead; reason: "OVERDUE" | "TODAY" | "NEW"; dueAt: string | null; nextAction: string };
+export type CrmUpcomingAppointment = { lead: CrmLead; appointment: CrmAppointment };
+export type CrmGoal = { advisorId: string; advisorEmail: string; month: string; targetContacts: number; targetInteractions: number; targetConversions: number; actualContacts: number; actualInteractions: number; actualConversions: number };
+export type CrmAnalytics = { fromDate: string; toDate: string; newLeads: number; interactions: number; conversions: number; averageFirstContactHours: number | null; weeklyInteractions: { weekStart: string; interactions: number }[]; stageChanges: { status: string; count: number }[]; sources: { source: string; newLeads: number; convertedLeads: number }[] };
 export type CrmDashboard = {
   totalLeads: number;
   dueFollowups: number;
@@ -59,6 +110,7 @@ export type CrmAdvisor = {
   name: string;
   status: string;
   activeLeads: number;
+  maxActiveLeads: number;
   contactedLeads: number;
   convertedLeads: number;
   interactionsCount: number;
@@ -66,7 +118,7 @@ export type CrmAdvisor = {
 
 const leadFields = `
   uuid fullName email phone countryPrefix source campaign status score notes
-  createdAt lastContactedAt nextFollowupAt advisorEmail simulationsCount
+  createdAt lastContactedAt nextFollowupAt advisorEmail simulationsCount advisorSimulationsCount
 `;
 
 async function request<T>(query: string, variables?: Record<string, unknown>): Promise<T> {
@@ -87,12 +139,13 @@ export async function getCrmActor(): Promise<CrmActor> {
 export async function getCrmLeads(filters: {
   status?: string;
   advisorId?: string;
+  unassigned?: boolean;
   search?: string;
   limit?: number;
 } = {}): Promise<CrmLead[]> {
   const data = await request<{ crm: { leads: CrmLead[] } }>(
-    `query CrmLeads($status: String, $advisorId: UUID, $search: String, $limit: Int) {
-      crm { leads(status: $status, advisorId: $advisorId, search: $search, limit: $limit) { ${leadFields} } }
+    `query CrmLeads($status: String, $advisorId: UUID, $unassigned: Boolean, $search: String, $limit: Int) {
+      crm { leads(status: $status, advisorId: $advisorId, unassigned: $unassigned, search: $search, limit: $limit) { ${leadFields} } }
     }`,
     filters
   );
@@ -104,14 +157,91 @@ export async function getCrmLead(id: string): Promise<CrmLead | null> {
     `query CrmLead($id: UUID!) {
       crm { lead(id: $id) { ${leadFields}
         latestSimulation { capitalAmount currency termMonths fundPlanNameSnapshot estimatedTotalReturn createdAt }
-        interactions { uuid advisorEmail interactionType outcome summary details transcriptText occurredAt nextFollowupAt attachments { uuid filename contentType size } }
+        interactions { uuid advisorEmail interactionType outcome summary details transcriptText occurredAt nextFollowupAt nextAction attachments { uuid filename contentType size } }
         appointments { uuid scheduledAt status notes advisorEmail }
         proposals { uuid amount currency termMonths validUntil status notes createdAt advisorEmail attachments { uuid filename contentType size } }
+        statusHistory { previousStatus status changedAt isBaseline advisorEmail }
       } }
     }`,
     { id }
   );
   return data.crm.lead;
+}
+
+export async function createCrmLead(input: {
+  fullName: string;
+  email?: string;
+  phone?: string;
+  countryPrefix?: string;
+  notes?: string;
+}): Promise<CrmLead> {
+  const data = await request<{ createCrmLead: { lead: CrmLead } }>(
+    `mutation CreateCrmLead($fullName: String!, $email: String, $phone: String, $countryPrefix: String, $notes: String) {
+      createCrmLead(fullName: $fullName, email: $email, phone: $phone, countryPrefix: $countryPrefix, notes: $notes) {
+        lead { ${leadFields} }
+      }
+    }`,
+    input
+  );
+  return data.createCrmLead.lead;
+}
+
+export async function getCrmSimulationWorkspace(leadId: string): Promise<{
+  lead: Pick<CrmLead, "uuid" | "fullName" | "email" | "status"> | null;
+  plans: CrmSimulationPlan[];
+  simulations: CrmSimulation[];
+}> {
+  const data = await request<{ crm: {
+    lead: (Pick<CrmLead, "uuid" | "fullName" | "email" | "status"> & { advisorSimulations: CrmSimulation[] }) | null;
+    simulationPlans: CrmSimulationPlan[];
+  } }>(`query CrmSimulationWorkspace($leadId: UUID!) {
+    crm {
+      lead(id: $leadId) {
+        uuid fullName email status
+        advisorSimulations {
+          uuid capitalAmount currency termMonths frequency startDate
+          fundPlanNameSnapshot annualRatePercent appliedAnnualRatePercent periodRatePercent
+          couponCodeSnapshot couponBenefitTypeSnapshot couponBenefitValueSnapshot
+          estimatedTotalInterest estimatedBonus estimatedTotalReturn
+          createdAt createdByEmail
+          schedule { number dueDate interest principal bonus total }
+        }
+      }
+      simulationPlans {
+        uuid fundId name fundName currency frequency termMonths minAmount maxAmount
+        annualRatePercent periodRatePercent
+      }
+    }
+  }`, { leadId });
+  const { lead, simulationPlans } = data.crm;
+  return { lead, plans: simulationPlans, simulations: lead?.advisorSimulations ?? [] };
+}
+
+export async function createCrmSimulation(input: {
+  leadId: string;
+  fundId: string;
+  currency: string;
+  frequency: "MONTHLY" | "QUARTERLY";
+  termMonths: number;
+  capitalAmount: string;
+  couponCode?: string;
+  startDate: string;
+}): Promise<CrmSimulation> {
+  const data = await request<{ createCrmSimulation: { simulation: CrmSimulation } }>(
+    `mutation CreateCrmSimulation($leadId: UUID!, $fundId: UUID!, $currency: String!, $frequency: String!, $termMonths: Int!, $capitalAmount: String!, $couponCode: String, $startDate: Date) {
+      createCrmSimulation(leadId: $leadId, fundId: $fundId, currency: $currency, frequency: $frequency, termMonths: $termMonths, capitalAmount: $capitalAmount, couponCode: $couponCode, startDate: $startDate) {
+        simulation {
+          uuid capitalAmount currency termMonths frequency startDate
+          fundPlanNameSnapshot annualRatePercent appliedAnnualRatePercent periodRatePercent
+          couponCodeSnapshot couponBenefitTypeSnapshot couponBenefitValueSnapshot
+          estimatedTotalInterest estimatedBonus estimatedTotalReturn
+          createdAt createdByEmail
+          schedule { number dueDate interest principal bonus total }
+        }
+      }
+    }`, input
+  );
+  return data.createCrmSimulation.simulation;
 }
 
 export async function getCrmDashboard(advisorId?: string): Promise<CrmDashboard> {
@@ -130,7 +260,7 @@ export async function getCrmDashboard(advisorId?: string): Promise<CrmDashboard>
 export async function getCrmAdvisors(): Promise<CrmAdvisor[]> {
   const data = await request<{ crm: { advisors: CrmAdvisor[] } }>(
     `query { crm { advisors {
-      uuid email name status activeLeads contactedLeads convertedLeads interactionsCount
+      uuid email name status activeLeads maxActiveLeads contactedLeads convertedLeads interactionsCount
     } } }`
   );
   return data.crm.advisors;
@@ -144,17 +274,18 @@ export async function recordCrmInteraction(input: {
   details?: string;
   transcriptText?: string;
   nextFollowupAt?: string | null;
+  nextAction?: string;
   status?: string | null;
 }): Promise<{ lead: CrmLead; interactionId: string }> {
   const data = await request<{ recordCrmInteraction: { lead: CrmLead; interactionId: string } }>(
     `mutation RecordCrmInteraction(
       $leadId: UUID!, $interactionType: String!, $outcome: String!, $summary: String!,
-      $details: String, $transcriptText: String, $nextFollowupAt: DateTime, $status: String
+      $details: String, $transcriptText: String, $nextFollowupAt: DateTime, $nextAction: String, $status: String
     ) {
       recordCrmInteraction(
         leadId: $leadId, interactionType: $interactionType, outcome: $outcome,
         summary: $summary, details: $details, transcriptText: $transcriptText,
-        nextFollowupAt: $nextFollowupAt, status: $status
+        nextFollowupAt: $nextFollowupAt, nextAction: $nextAction, status: $status
       ) { interactionId lead { ${leadFields} } }
     }`,
     input
@@ -241,6 +372,63 @@ export function formatCrmDate(value: string | null | undefined, includeTime = fa
 }
 
 export function whatsappUrl(lead: Pick<CrmLead, "phone" | "countryPrefix">): string | null {
-  const digits = `${lead.countryPrefix}${lead.phone}`.replace(/\D/g, "");
-  return digits.length >= 10 ? `https://wa.me/${digits}` : null;
+  const phone = (lead.phone || "").trim();
+  const localDigits = phone.replace(/\D/g, "");
+  const prefix = (lead.countryPrefix || "").replace(/\D/g, "");
+  if (!localDigits) return null;
+  // Los prospectos antiguos de Perú pueden tener el móvil sin prefijo guardado.
+  const digits = phone.startsWith("+") ? localDigits
+    : prefix ? `${prefix}${localDigits}`
+      : /^9\d{8}$/.test(localDigits) ? `51${localDigits}` : "";
+  return /^\d{10,15}$/.test(digits) ? `https://wa.me/${digits}` : null;
+}
+
+export async function getCrmWorklist(): Promise<{ items: CrmWorkItem[]; appointments: CrmUpcomingAppointment[] }> {
+  const data = await request<{ crm: { worklist: CrmWorkItem[]; upcomingAppointments: CrmUpcomingAppointment[] } }>(`query {
+    crm { worklist { reason dueAt nextAction lead { ${leadFields} } }
+      upcomingAppointments { lead { ${leadFields} } appointment { uuid scheduledAt status notes advisorEmail } }
+    }
+  }`);
+  return { items: data.crm.worklist, appointments: data.crm.upcomingAppointments };
+}
+
+export async function getCrmGoals(month?: string): Promise<CrmGoal[]> {
+  const data = await request<{ crm: { goals: CrmGoal[] } }>(`query($month: Date) { crm { goals(month: $month) {
+    advisorId advisorEmail month targetContacts targetInteractions targetConversions actualContacts actualInteractions actualConversions
+  } } }`, { month });
+  return data.crm.goals;
+}
+
+export async function setCrmGoal(input: { advisorId: string; month: string; targetContacts: number; targetInteractions: number; targetConversions: number }): Promise<void> {
+  await request(`mutation($advisorId: UUID!, $month: Date!, $targetContacts: Int!, $targetInteractions: Int!, $targetConversions: Int!) {
+    setCrmAdvisorGoal(advisorId: $advisorId, month: $month, targetContacts: $targetContacts, targetInteractions: $targetInteractions, targetConversions: $targetConversions) { advisorId }
+  }`, input);
+}
+
+export async function getCrmAnalytics(filters: { fromDate?: string; toDate?: string; advisorId?: string } = {}): Promise<CrmAnalytics> {
+  const data = await request<{ crm: { analytics: CrmAnalytics } }>(`query($fromDate: Date, $toDate: Date, $advisorId: UUID) {
+    crm { analytics(fromDate: $fromDate, toDate: $toDate, advisorId: $advisorId) {
+      fromDate toDate newLeads interactions conversions averageFirstContactHours
+      weeklyInteractions { weekStart interactions }
+      stageChanges { status count }
+      sources { source newLeads convertedLeads }
+    } }
+  }`, filters);
+  return data.crm.analytics;
+}
+
+export async function assignCrmLead(leadId: string, advisorId: string, reason: string): Promise<void> {
+  await request(`mutation($leadId: UUID!, $advisorId: UUID!, $reason: String) {
+    assignCrmLead(leadId: $leadId, advisorId: $advisorId, reason: $reason) { lead { uuid advisorEmail } }
+  }`, { leadId, advisorId, reason });
+}
+
+export function whatsappPitchUrl(lead: Pick<CrmLead, "fullName" | "phone" | "countryPrefix">, advisorName: string | undefined): string | null {
+  const url = whatsappUrl(lead);
+  if (!url) return null;
+  const firstName = lead.fullName.trim().split(/\s+/)[0];
+  const greeting = firstName ? `Hola ${firstName},` : "Hola,";
+  const sender = advisorName?.trim() || "un asesor";
+  const pitch = `${greeting} soy ${sender} de Blua Investments. Me gustaría conocer tus objetivos de inversión y compartirte alternativas que podrían ajustarse a lo que buscas. ¿Podemos conversar por aquí?`;
+  return `${url}?text=${encodeURIComponent(pitch)}`;
 }

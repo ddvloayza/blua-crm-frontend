@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { ArrowUpRight, BarChart3, LayoutDashboard, LogOut, Menu, Users, X } from "lucide-react";
+import { ArrowUpRight, BarChart3, ClipboardList, LayoutDashboard, LogOut, Menu, Users, X } from "lucide-react";
 import { useCrm } from "@/context/CrmContext";
 import { logoutUser } from "@/lib/graphql/mutations/logoutUser";
 
@@ -32,8 +32,9 @@ export function CrmShell({ children }: { children: React.ReactNode }) {
 
   const items = actor.role === "ADMIN"
     ? [
-        { href: "/admin", label: "Dashboard", icon: BarChart3, exact: false },
+        { href: "/admin", label: "Dashboard", icon: BarChart3, exact: true },
         { href: "/leads", label: "Prospectos", icon: Users, exact: false },
+        { href: "/admin/assignments", label: "Asignaciones", icon: ClipboardList, exact: false },
       ]
     : [
         { href: "/", label: "Inicio", icon: LayoutDashboard, exact: true },

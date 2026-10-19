@@ -17,3 +17,11 @@ Después de publicar, agrega el dominio `crm.blua.pe` a esta app de Amplify. El 
 ## Acceso
 
 Las cuentas reciben el rol mediante los grupos de Django `CRM Asesores` y `CRM Administradores`. El dashboard de asesores muestra los leads asignados; el administrador ve el avance del equipo y el funnel. Desde Supervisión puede descargar un `.xlsx` con el resumen, el progreso por asesor y la distribución de prospectos por estado. La exportación refleja el filtro de asesor seleccionado y la fecha de corte; es una fotografía de los datos actuales. La ficha permite registrar gestiones, citas, propuestas y adjuntos.
+
+## Simulaciones comerciales
+
+En la ficha de un prospecto asignado, **Simular inversión** permite elegir fondo, moneda, plazo, frecuencia mensual o trimestral, monto y fecha estimada de inicio. El plan activo se elige automáticamente según el rango del capital y los demás parámetros, y se muestran su TEA y tasa estimada por pago. Django calcula y guarda la simulación en `crm.AdvisorSimulation`, ligada al lead, al asesor y al usuario cliente cuando existe. Las simulaciones realizadas por el cliente permanecen en `investment.InvestmentSimulation`. Se puede ingresar un código de cupón vigente; las mejoras de tasa anual o por período y bonos fijos se reflejan en la proyección, mientras que el descuento de comisión se muestra sin modificar los pagos porque no se calculan comisiones aquí. El cupón no se canjea hasta formalizar la inversión. El cuadro convierte la TEA a tasa efectiva mensual o trimestral y calcula los intereses sobre el capital original; los pagos no se reinvierten. Muestra la devolución del capital al vencimiento. Se puede imprimir o guardar como PDF desde el navegador. Es una proyección referencial; no emite un contrato ni considera retenciones, comisiones o días no hábiles.
+
+Antes de usar esta pantalla en un nuevo entorno, aplica las migraciones del backend hasta `crm.0012_advisorsimulation_annual_rate_snapshot_and_more` para crear la tabla comercial y asignar sus permisos a los grupos CRM.
+
+Los cupones `blua1` y `blua2` añaden, respectivamente, 1 y 2 puntos porcentuales a la TEA del plan antes de convertirla a la tasa mensual o trimestral. Se crean con la migración `investment.0012_seed_blua_annual_coupons`.
