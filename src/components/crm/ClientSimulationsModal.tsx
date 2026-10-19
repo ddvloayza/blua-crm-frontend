@@ -73,7 +73,7 @@ export function ClientSimulationsModal({ leadId, leadName, onClose }: {
           <div className="border border-[#111111] p-3"><div className="text-xs text-slate-600">Interés total estimado</div><strong className="mt-1 block text-sm">{money(selected.estimatedTotalInterest, selected.currency)}</strong></div>
         </div>
         {(selected.periodRatePercent !== null || selected.annualRatePercent !== null) && <p className="mt-4 text-sm text-slate-700">
-          {selected.annualRatePercent !== null && <>TEA implícita de la simulación: <strong>{selected.annualRatePercent}%</strong></>}
+          {selected.annualRatePercent !== null && <>TEA del plan al simular: <strong>{selected.annualRatePercent}%</strong></>}
           {selected.annualRatePercent !== null && selected.periodRatePercent !== null && " · "}
           {selected.periodRatePercent !== null && <>Tasa por pago: <strong>{selected.periodRatePercent}%</strong></>}
         </p>}
