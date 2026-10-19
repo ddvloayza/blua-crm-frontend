@@ -33,7 +33,8 @@ export default function CrmLeadSimulationsPage() {
   const [selectedId, setSelectedId] = useState("");
   const [currency, setCurrency] = useState("PEN");
   const [frequency, setFrequency] = useState<"MONTHLY" | "QUARTERLY">("MONTHLY");
-  const [planId, setPlanId] = useState("");
+  const [fundId, setFundId] = useState("");
+  const [termMonths, setTermMonths] = useState(0);
   const [capital, setCapital] = useState("");
   const [startDate, setStartDate] = useState(localToday);
   const [loading, setLoading] = useState(true);
@@ -54,7 +55,8 @@ export default function CrmLeadSimulationsPage() {
           const first = workspace.plans[0];
           setCurrency(first.currency);
           setFrequency(first.frequency);
-          setPlanId(first.uuid);
+          setFundId(first.fundId);
+          setTermMonths(first.termMonths);
         }
       })
       .catch((reason) => { if (alive) setError(reason instanceof Error ? reason.message : "No se pudieron cargar las simulaciones."); })
@@ -62,22 +64,36 @@ export default function CrmLeadSimulationsPage() {
     return () => { alive = false; };
   }, [actor, id]);
 
-  const matchingPlans = plans.filter((plan) => plan.currency === currency && plan.frequency === frequency);
-  const selectedPlanId = matchingPlans.some((plan) => plan.uuid === planId) ? planId : matchingPlans[0]?.uuid ?? "";
-  const plan = matchingPlans.find((item) => item.uuid === selectedPlanId);
+  const funds = [...new Map(plans.map((item) => [item.fundId, item.fundName])).entries()];
+  const selectedFundId = funds.some(([value]) => value === fundId) ? fundId : funds[0]?.[0] ?? "";
+  const fundPlans = plans.filter((item) => item.fundId === selectedFundId);
+  const currencies = [...new Set(fundPlans.map((item) => item.currency))];
+  const selectedCurrency = currencies.includes(currency) ? currency : currencies[0] ?? "";
+  const availableFrequencies = [...new Set(fundPlans.filter((item) => item.currency === selectedCurrency).map((item) => item.frequency))];
+  const selectedFrequency = availableFrequencies.includes(frequency) ? frequency : availableFrequencies[0];
+  const availableTerms = [...new Set(fundPlans.filter((item) => item.currency === selectedCurrency && item.frequency === selectedFrequency).map((item) => item.termMonths))].sort((a, b) => a - b);
+  const selectedTermMonths = availableTerms.includes(termMonths) ? termMonths : availableTerms[0] ?? 0;
+  const matchingPlans = fundPlans.filter((item) => item.currency === selectedCurrency && item.frequency === selectedFrequency && item.termMonths === selectedTermMonths);
+  const amount = Number(capital);
+  const plan = capital && Number.isFinite(amount) && amount > 0
+    ? matchingPlans.find((item) => Number(item.minAmount) <= amount && (item.maxAmount === null || amount <= Number(item.maxAmount)))
+    : undefined;
   const selected = simulations.find((item) => item.uuid === selectedId) ?? simulations[0];
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!lead || !plan) return;
-    const amount = Number(capital);
-    if (!Number.isFinite(amount) || amount < Number(plan.minAmount) || (plan.maxAmount && amount > Number(plan.maxAmount))) {
-      setError(`El monto permitido para este plan es desde ${money(plan.minAmount, plan.currency)}${plan.maxAmount ? ` hasta ${money(plan.maxAmount, plan.currency)}` : ""}.`);
+    if (!lead || !selectedFundId || !selectedCurrency || !selectedFrequency || !selectedTermMonths) return;
+    if (!plan) {
+      setError("No hay un plan activo para ese monto, plazo, moneda y frecuencia.");
       return;
     }
     setSaving(true); setError("");
     try {
-      const result = await createCrmSimulation({ leadId: lead.uuid, planId: plan.uuid, capitalAmount: capital, startDate });
+      const result = await createCrmSimulation({
+        leadId: lead.uuid, fundId: selectedFundId, currency: selectedCurrency,
+        frequency: selectedFrequency, termMonths: selectedTermMonths,
+        capitalAmount: capital, startDate,
+      });
       setSimulations((current) => [result, ...current]);
       setSelectedId(result.uuid);
     } catch (reason) {
@@ -101,31 +117,39 @@ export default function CrmLeadSimulationsPage() {
     {actor?.role === "ADVISOR" && lead.status !== "DO_NOT_CONTACT" && <form onSubmit={submit} className="crm-panel crm-print-hide space-y-5 p-5 sm:p-6">
       <div className="flex items-center gap-2"><Calculator size={19} /><h2 className="crm-section-title">Nueva simulación</h2></div>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <label className="text-xs font-semibold text-slate-600 sm:col-span-2">Fondo
+          <select value={selectedFundId} onChange={(event) => setFundId(event.target.value)} disabled={!funds.length} className="crm-field mt-1.5 h-11 w-full px-3 text-sm font-normal disabled:opacity-50">
+            {funds.map(([value, name]) => <option key={value} value={value}>{name}</option>)}
+          </select>
+        </label>
         <label className="text-xs font-semibold text-slate-600">Moneda
-          <select value={currency} onChange={(event) => setCurrency(event.target.value)} className="crm-field mt-1.5 h-11 w-full px-3 text-sm font-normal">
-            {[...new Set(plans.map((item) => item.currency))].map((item) => <option key={item} value={item}>{item === "PEN" ? "Soles (PEN)" : item === "USD" ? "Dólares (USD)" : item}</option>)}
+          <select value={selectedCurrency} onChange={(event) => setCurrency(event.target.value)} disabled={!currencies.length} className="crm-field mt-1.5 h-11 w-full px-3 text-sm font-normal disabled:opacity-50">
+            {currencies.map((item) => <option key={item} value={item}>{item === "PEN" ? "Soles (PEN)" : item === "USD" ? "Dólares (USD)" : item}</option>)}
           </select>
         </label>
         <label className="text-xs font-semibold text-slate-600">Pago de intereses
-          <select value={frequency} onChange={(event) => setFrequency(event.target.value as "MONTHLY" | "QUARTERLY")} className="crm-field mt-1.5 h-11 w-full px-3 text-sm font-normal"><option value="MONTHLY">Mensual</option><option value="QUARTERLY">Trimestral</option></select>
+          <select value={selectedFrequency ?? ""} onChange={(event) => setFrequency(event.target.value as "MONTHLY" | "QUARTERLY")} disabled={!availableFrequencies.length} className="crm-field mt-1.5 h-11 w-full px-3 text-sm font-normal disabled:opacity-50">
+            {availableFrequencies.map((item) => <option key={item} value={item}>{item === "MONTHLY" ? "Mensual" : "Trimestral"}</option>)}
+          </select>
         </label>
-        <label className="text-xs font-semibold text-slate-600 sm:col-span-2">Plan y plazo
-          <select required value={selectedPlanId} onChange={(event) => setPlanId(event.target.value)} disabled={!matchingPlans.length} className="crm-field mt-1.5 h-11 w-full px-3 text-sm font-normal disabled:opacity-50">
-            {!matchingPlans.length && <option value="">Sin planes activos para esta combinación</option>}
-            {matchingPlans.map((item) => <option key={item.uuid} value={item.uuid}>{item.fundName} · {item.name} · {item.termMonths} meses</option>)}
+        <label className="text-xs font-semibold text-slate-600">Plazo
+          <select value={selectedTermMonths || ""} onChange={(event) => setTermMonths(Number(event.target.value))} disabled={!availableTerms.length} className="crm-field mt-1.5 h-11 w-full px-3 text-sm font-normal disabled:opacity-50">
+            {availableTerms.map((months) => <option key={months} value={months}>{months} meses</option>)}
           </select>
         </label>
         <label className="text-xs font-semibold text-slate-600 sm:col-span-2">Capital a invertir
-          <input required type="number" min={plan?.minAmount ?? "0.01"} max={plan?.maxAmount ?? undefined} step="0.01" value={capital} onChange={(event) => setCapital(event.target.value)} placeholder={plan ? `Desde ${money(plan.minAmount, plan.currency)}` : "Monto"} className="crm-field mt-1.5 h-11 w-full px-3 text-sm font-normal" />
+          <input required type="number" min="0.01" step="0.01" value={capital} onChange={(event) => setCapital(event.target.value)} placeholder="Ingresa el monto para elegir el plan" className="crm-field mt-1.5 h-11 w-full px-3 text-sm font-normal" />
         </label>
-        <label className="text-xs font-semibold text-slate-600 sm:col-span-2">Fecha estimada de inicio
+        <label className="text-xs font-semibold text-slate-600">Fecha estimada de inicio
           <input required type="date" min={localToday()} value={startDate} onChange={(event) => setStartDate(event.target.value)} className="crm-field mt-1.5 h-11 w-full px-3 text-sm font-normal" />
         </label>
       </div>
-      {plan && <p className="text-xs text-slate-500">Rango del plan: {money(plan.minAmount, plan.currency)}{plan.maxAmount ? ` a ${money(plan.maxAmount, plan.currency)}` : " en adelante"}. El capital se devuelve al final del plazo.</p>}
+      {plan ? <div role="status" className="border border-[#111111] bg-[#e2e8ff] p-3 text-sm"><span className="font-semibold">Plan elegido automáticamente: {plan.name}</span><span className="mt-1 block text-xs text-slate-600">{plan.termMonths} meses · {plan.frequency === "MONTHLY" ? "intereses mensuales" : "intereses trimestrales"} · rango {money(plan.minAmount, plan.currency)}{plan.maxAmount ? ` a ${money(plan.maxAmount, plan.currency)}` : " en adelante"}</span></div>
+        : capital && matchingPlans.length ? <p role="status" className="border border-amber-700 bg-[#fef3c7] p-3 text-sm text-amber-900">No hay un plan activo para ese capital. Ajusta el monto, plazo o frecuencia.</p>
+        : <p className="text-xs text-slate-500">El plan se elige automáticamente según el capital, plazo, moneda y frecuencia de pago.</p>}
       {!plans.length && <p className="text-sm text-amber-800">No hay planes de inversión activos para simular. Configúralos en Django.</p>}
       {error && <p role="alert" className="border border-red-700 bg-[#fee2e2] p-3 text-sm text-red-700">{error}</p>}
-      <button type="submit" disabled={saving || !plan || !capital} className="crm-button inline-flex items-center gap-2 disabled:opacity-50"><Calculator size={16} />{saving ? "Calculando…" : "Crear simulación"}</button>
+      <button type="submit" disabled={saving || !plan || !startDate} className="crm-button inline-flex items-center gap-2 disabled:opacity-50"><Calculator size={16} />{saving ? "Calculando…" : "Crear simulación"}</button>
     </form>}
 
     <div className="crm-print-hide flex flex-wrap items-end justify-between gap-4">

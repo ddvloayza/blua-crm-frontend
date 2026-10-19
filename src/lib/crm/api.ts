@@ -41,6 +41,7 @@ export type CrmSimulation = {
 };
 export type CrmSimulationPlan = {
   uuid: string;
+  fundId: string;
   name: string;
   fundName: string;
   currency: string;
@@ -194,7 +195,7 @@ export async function getCrmSimulationWorkspace(leadId: string): Promise<{
         }
       }
       simulationPlans {
-        uuid name fundName currency frequency termMonths minAmount maxAmount
+        uuid fundId name fundName currency frequency termMonths minAmount maxAmount
       }
     }
   }`, { leadId });
@@ -204,13 +205,16 @@ export async function getCrmSimulationWorkspace(leadId: string): Promise<{
 
 export async function createCrmSimulation(input: {
   leadId: string;
-  planId: string;
+  fundId: string;
+  currency: string;
+  frequency: "MONTHLY" | "QUARTERLY";
+  termMonths: number;
   capitalAmount: string;
   startDate: string;
 }): Promise<CrmSimulation> {
   const data = await request<{ createCrmSimulation: { simulation: CrmSimulation } }>(
-    `mutation CreateCrmSimulation($leadId: UUID!, $planId: UUID!, $capitalAmount: String!, $startDate: Date) {
-      createCrmSimulation(leadId: $leadId, planId: $planId, capitalAmount: $capitalAmount, startDate: $startDate) {
+    `mutation CreateCrmSimulation($leadId: UUID!, $fundId: UUID!, $currency: String!, $frequency: String!, $termMonths: Int!, $capitalAmount: String!, $startDate: Date) {
+      createCrmSimulation(leadId: $leadId, fundId: $fundId, currency: $currency, frequency: $frequency, termMonths: $termMonths, capitalAmount: $capitalAmount, startDate: $startDate) {
         simulation {
           uuid capitalAmount currency termMonths frequency startDate
           fundPlanNameSnapshot estimatedTotalInterest estimatedTotalReturn
