@@ -67,6 +67,7 @@ export type CrmLead = {
   nextFollowupAt: string | null;
   advisorEmail: string | null;
   simulationsCount: number;
+  advisorSimulationsCount: number;
   latestSimulation?: {
     capitalAmount: string;
     currency: string;
@@ -107,7 +108,7 @@ export type CrmAdvisor = {
 
 const leadFields = `
   uuid fullName email phone countryPrefix source campaign status score notes
-  createdAt lastContactedAt nextFollowupAt advisorEmail simulationsCount
+  createdAt lastContactedAt nextFollowupAt advisorEmail simulationsCount advisorSimulationsCount
 `;
 
 async function request<T>(query: string, variables?: Record<string, unknown>): Promise<T> {
@@ -181,13 +182,13 @@ export async function getCrmSimulationWorkspace(leadId: string): Promise<{
   simulations: CrmSimulation[];
 }> {
   const data = await request<{ crm: {
-    lead: (Pick<CrmLead, "uuid" | "fullName" | "email" | "status"> & { simulations: CrmSimulation[] }) | null;
+    lead: (Pick<CrmLead, "uuid" | "fullName" | "email" | "status"> & { advisorSimulations: CrmSimulation[] }) | null;
     simulationPlans: CrmSimulationPlan[];
   } }>(`query CrmSimulationWorkspace($leadId: UUID!) {
     crm {
       lead(id: $leadId) {
         uuid fullName email status
-        simulations {
+        advisorSimulations {
           uuid capitalAmount currency termMonths frequency startDate
           fundPlanNameSnapshot estimatedTotalInterest estimatedTotalReturn
           createdAt createdByEmail
@@ -200,7 +201,7 @@ export async function getCrmSimulationWorkspace(leadId: string): Promise<{
     }
   }`, { leadId });
   const { lead, simulationPlans } = data.crm;
-  return { lead, plans: simulationPlans, simulations: lead?.simulations ?? [] };
+  return { lead, plans: simulationPlans, simulations: lead?.advisorSimulations ?? [] };
 }
 
 export async function createCrmSimulation(input: {

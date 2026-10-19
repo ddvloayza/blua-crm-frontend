@@ -208,10 +208,11 @@ export default function CrmLeadDetailPage() {
             <div><div className="text-xs text-slate-500">Origen</div><div className="mt-1 text-sm font-semibold text-slate-800">{lead.source || "—"}</div></div>
             <div><div className="text-xs text-slate-500">Campaña</div><div className="mt-1 text-sm font-semibold text-slate-800">{lead.campaign || "—"}</div></div>
             <div><div className="text-xs text-slate-500">Asesor responsable</div><div className="mt-1 text-sm font-semibold text-slate-800">{lead.advisorEmail || "Sin asignar"}</div></div>
-            <div><div className="text-xs text-slate-500">Simulaciones</div><div className="mt-1 text-sm font-semibold text-slate-800">{lead.simulationsCount}</div></div>
+            <div><div className="text-xs text-slate-500">Simulaciones del cliente</div><div className="mt-1 text-sm font-semibold text-slate-800">{lead.simulationsCount}</div></div>
           </div>
-          {latest && <div className="mt-5 border border-[#111111] bg-[#e2e8ff] p-4"><div className="text-xs font-semibold uppercase tracking-wider text-[#111111]">Última simulación</div><div className="mt-2 crm-section-title">{amount}</div><div className="mt-1 text-sm text-slate-600">{latest.fundPlanNameSnapshot || "Plan de inversión"} · {latest.termMonths} meses</div><div className="mt-1 text-xs text-slate-500">{formatCrmDate(latest.createdAt)}</div></div>}
-          <Link href={`/leads/${lead.uuid}/simulations`} className="crm-link mt-4 inline-flex items-center gap-2"><Calculator size={15} /> Ver simulaciones y cuadro de pagos</Link>
+          <div className="mt-4 text-xs text-slate-600">Simulaciones del asesor: <strong>{lead.advisorSimulationsCount}</strong></div>
+          {latest && <div className="mt-5 border border-[#111111] bg-[#e2e8ff] p-4"><div className="text-xs font-semibold uppercase tracking-wider text-[#111111]">Última simulación del cliente</div><div className="mt-2 crm-section-title">{amount}</div><div className="mt-1 text-sm text-slate-600">{latest.fundPlanNameSnapshot || "Plan de inversión"} · {latest.termMonths} meses</div><div className="mt-1 text-xs text-slate-500">{formatCrmDate(latest.createdAt)}</div></div>}
+          <Link href={`/leads/${lead.uuid}/simulations`} className="crm-link mt-4 inline-flex items-center gap-2"><Calculator size={15} /> Ver simulaciones del asesor y cuadro de pagos</Link>
           {lead.notes && <div className="mt-5 border-t border-[#e5e7eb] pt-4"><div className="text-xs text-slate-500">Notas del prospecto</div><p className="mt-2 whitespace-pre-wrap text-sm text-slate-700">{lead.notes}</p></div>}
         </section>
 

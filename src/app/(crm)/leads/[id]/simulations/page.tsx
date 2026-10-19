@@ -153,7 +153,7 @@ export default function CrmLeadSimulationsPage() {
     </form>}
 
     <div className="crm-print-hide flex flex-wrap items-end justify-between gap-4">
-      <div><div className="crm-kicker">HISTORIAL</div><h2 className="crm-section-title mt-1">Simulaciones del prospecto</h2></div>
+      <div><div className="crm-kicker">HISTORIAL</div><h2 className="crm-section-title mt-1">Simulaciones del asesor</h2></div>
       {selected && <button type="button" onClick={() => window.print()} className="crm-button crm-button-secondary inline-flex items-center gap-2"><Printer size={16} /> Imprimir o guardar PDF</button>}
     </div>
     {!!simulations.length && <div className="crm-print-hide flex flex-wrap gap-2">
