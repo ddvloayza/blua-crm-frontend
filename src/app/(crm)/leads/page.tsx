@@ -34,7 +34,7 @@ function CrmLeadList() {
   return <div className="space-y-6">
     <div className="flex flex-wrap items-end justify-between gap-4"><div><div className="crm-kicker">Prospectos</div>
       <h1 className="mt-2 crm-title">{advisorId ? "Prospectos del asesor" : actor?.role === "ADMIN" ? "Todos los prospectos" : "Mis prospectos"}</h1>
-      <p className="mt-2 text-sm text-slate-500">Abre una ficha para ver sus datos de contacto y registrar la gestión realizada.</p>
+      <p className="mt-2 text-sm text-slate-500">{actor?.role === "ADVISOR" ? "Contacta por WhatsApp desde la lista o abre la ficha para registrar la gestión realizada." : "Abre una ficha para ver los datos y el avance comercial."}</p>
     </div>{actor?.role === "ADVISOR" && <Link href="/leads/new" className="crm-button inline-flex items-center gap-2"><UserPlus size={17} /> Nuevo prospecto</Link>}</div>
     <div className="flex flex-col gap-3 crm-panel p-4 sm:flex-row">
       <label className="relative flex-1"><Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -46,7 +46,7 @@ function CrmLeadList() {
       </select>
     </div>
     {error && <div className="border border-red-700 bg-[#fee2e2] p-4 text-sm text-red-700">{error}</div>}
-    {loading ? <div className="crm-panel p-8 text-sm text-slate-500">Cargando prospectos…</div> : <LeadTable leads={leads} showAdvisor={actor?.role === "ADMIN"} />}
+    {loading ? <div className="crm-panel p-8 text-sm text-slate-500">Cargando prospectos…</div> : <LeadTable leads={leads} showAdvisor={actor?.role === "ADMIN"} showWhatsApp={actor?.role === "ADVISOR"} advisorName={actor?.role === "ADVISOR" ? actor.name : undefined} />}
     {!loading && <p className="text-xs text-slate-400">Mostrando {leads.length} prospectos{leads.length === 200 ? " (límite de la vista; usa los filtros para acotar)" : ""}.</p>}
   </div>;
 }

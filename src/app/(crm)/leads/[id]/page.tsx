@@ -177,6 +177,9 @@ export default function CrmLeadDetailPage() {
         <div className="mt-3 flex flex-wrap items-center gap-3"><StatusBadge status={lead.status} /><span className="text-sm text-slate-500">Ingresó el {formatCrmDate(lead.createdAt)}</span></div>
       </div>
       {actor?.role === "ADVISOR" && lead.status !== "DO_NOT_CONTACT" && <div className="flex flex-wrap gap-2">
+        {whatsapp
+          ? <a href={whatsapp} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 crm-button crm-button-green"><MessageCircle size={16} /> Contactar por WhatsApp</a>
+          : <button type="button" disabled title="Registra un teléfono con prefijo internacional para contactar por WhatsApp" className="inline-flex items-center gap-2 crm-button crm-button-secondary cursor-not-allowed opacity-60"><MessageCircle size={16} /> WhatsApp sin teléfono válido</button>}
         <button type="button" aria-haspopup="dialog" onClick={() => openModal("interaction")} className="inline-flex items-center gap-2 crm-button"><Send size={16} /> Registrar gestión</button>
         <button type="button" aria-haspopup="dialog" onClick={() => openModal("appointment")} className="inline-flex items-center gap-2 crm-button crm-button-secondary"><CalendarPlus size={16} /> Programar cita</button>
         <button type="button" aria-haspopup="dialog" onClick={() => openModal("proposal")} className="inline-flex items-center gap-2 crm-button crm-button-secondary"><FilePlus2 size={16} /> Crear propuesta</button>

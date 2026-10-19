@@ -372,8 +372,15 @@ export function formatCrmDate(value: string | null | undefined, includeTime = fa
 }
 
 export function whatsappUrl(lead: Pick<CrmLead, "phone" | "countryPrefix">): string | null {
-  const digits = `${lead.countryPrefix}${lead.phone}`.replace(/\D/g, "");
-  return digits.length >= 10 ? `https://wa.me/${digits}` : null;
+  const phone = (lead.phone || "").trim();
+  const localDigits = phone.replace(/\D/g, "");
+  const prefix = (lead.countryPrefix || "").replace(/\D/g, "");
+  if (!localDigits) return null;
+  // Los prospectos antiguos de Perú pueden tener el móvil sin prefijo guardado.
+  const digits = phone.startsWith("+") ? localDigits
+    : prefix ? `${prefix}${localDigits}`
+      : /^9\d{8}$/.test(localDigits) ? `51${localDigits}` : "";
+  return /^\d{10,15}$/.test(digits) ? `https://wa.me/${digits}` : null;
 }
 
 export async function getCrmWorklist(): Promise<{ items: CrmWorkItem[]; appointments: CrmUpcomingAppointment[] }> {

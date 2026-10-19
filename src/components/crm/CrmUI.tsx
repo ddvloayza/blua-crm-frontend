@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { ArrowUpRight } from "lucide-react";
-import { CrmDashboard, CrmLead, CRM_STATUS_LABELS, formatCrmDate } from "@/lib/crm/api";
+import { ArrowUpRight, MessageCircle } from "lucide-react";
+import { CrmDashboard, CrmLead, CRM_STATUS_LABELS, formatCrmDate, whatsappPitchUrl } from "@/lib/crm/api";
 
 export function StatusBadge({ status }: { status: string }) {
   const color = status === "CONVERTED" ? "bg-[#d1fae5]" :
@@ -43,8 +43,8 @@ export function FunnelChart({ dashboard }: { dashboard: CrmDashboard }) {
   </div>;
 }
 
-export function LeadTable({ leads, showAdvisor = false, empty = "No hay prospectos para mostrar." }: {
-  leads: CrmLead[]; showAdvisor?: boolean; empty?: string;
+export function LeadTable({ leads, showAdvisor = false, showWhatsApp = false, advisorName, empty = "No hay prospectos para mostrar." }: {
+  leads: CrmLead[]; showAdvisor?: boolean; showWhatsApp?: boolean; advisorName?: string; empty?: string;
 }) {
   return <div className="crm-panel overflow-hidden">
     <div className="overflow-x-auto"><table className="w-full min-w-[780px] border-collapse text-left">
@@ -54,14 +54,21 @@ export function LeadTable({ leads, showAdvisor = false, empty = "No hay prospect
         <th className="border-b border-[#111111] px-5 py-4">Último contacto</th><th className="border-b border-[#111111] px-5 py-4">Seguimiento</th><th className="border-b border-[#111111] px-5 py-4" />
       </tr></thead>
       <tbody className="divide-y divide-[#e5e7eb]">
-        {leads.map((lead) => <tr key={lead.uuid} className="transition-colors hover:bg-[#eef2ff]">
+        {leads.map((lead) => {
+          const whatsapp = showWhatsApp && lead.status !== "DO_NOT_CONTACT" ? whatsappPitchUrl(lead, advisorName) : null;
+          return <tr key={lead.uuid} className="transition-colors hover:bg-[#eef2ff]">
           <td className="px-5 py-4"><div className="font-semibold text-[#111111]">{lead.fullName || lead.email || "Sin nombre"}</div><div className="mt-1 text-xs text-[#4b5563]">{lead.email || `${lead.countryPrefix} ${lead.phone}` || "Sin contacto"}</div></td>
           <td className="px-5 py-4"><StatusBadge status={lead.status} /></td>
           {showAdvisor && <td className="px-5 py-4 text-sm text-[#4b5563]">{lead.advisorEmail || "Sin asignar"}</td>}
           <td className="px-5 py-4 text-sm text-[#4b5563]">{formatCrmDate(lead.lastContactedAt)}</td>
           <td className="px-5 py-4 text-sm text-[#4b5563]">{formatCrmDate(lead.nextFollowupAt, true)}</td>
-          <td className="px-5 py-4"><Link href={`/leads/${lead.uuid}`} className="crm-link inline-flex items-center gap-1 whitespace-nowrap">VER FICHA <ArrowUpRight size={15} /></Link></td>
-        </tr>)}
+          <td className="px-5 py-4"><div className="flex flex-wrap items-center gap-3">
+            {whatsapp && <a href={whatsapp} target="_blank" rel="noopener noreferrer" aria-label={`Contactar por WhatsApp a ${lead.fullName || lead.email || "este prospecto"}`} className="inline-flex items-center gap-1 whitespace-nowrap text-xs font-semibold text-[#111111] hover:underline"><MessageCircle size={16} /> WhatsApp</a>}
+            {showWhatsApp && lead.status !== "DO_NOT_CONTACT" && !whatsapp && <span className="whitespace-nowrap text-xs text-slate-500" title="Registra un teléfono con prefijo internacional para contactar por WhatsApp">Sin teléfono válido</span>}
+            <Link href={`/leads/${lead.uuid}`} className="crm-link inline-flex items-center gap-1 whitespace-nowrap">VER FICHA <ArrowUpRight size={15} /></Link>
+          </div></td>
+        </tr>;
+        })}
         {!leads.length && <tr><td colSpan={showAdvisor ? 6 : 5} className="px-5 py-12 text-center text-sm text-[#4b5563]">{empty}</td></tr>}
       </tbody>
     </table></div>
