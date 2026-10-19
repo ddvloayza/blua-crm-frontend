@@ -7,11 +7,12 @@ type CrmModalProps = {
   title: string;
   description?: string;
   busy?: boolean;
+  wide?: boolean;
   onClose: () => void;
   children: React.ReactNode;
 };
 
-export function CrmModal({ title, description, busy = false, onClose, children }: CrmModalProps) {
+export function CrmModal({ title, description, busy = false, wide = false, onClose, children }: CrmModalProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const titleId = useId();
 
@@ -30,7 +31,7 @@ export function CrmModal({ title, description, busy = false, onClose, children }
   return <dialog
     ref={dialogRef}
     aria-labelledby={titleId}
-    className="crm-modal"
+    className={`crm-modal${wide ? " crm-modal-wide" : ""}`}
     onCancel={(event) => {
       event.preventDefault();
       if (!busy) onClose();

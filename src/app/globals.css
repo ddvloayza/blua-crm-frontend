@@ -49,6 +49,7 @@ button:disabled { cursor: not-allowed; }
 .crm-app input[type="file"] { max-width: 100%; }
 .crm-signin-hero { background: linear-gradient(135deg, #3866f2 0%, #023373 100%); }
 .crm-modal { width: min(720px, calc(100% - 2rem)); max-width: none; max-height: min(90dvh, 900px); margin: auto; padding: 0; border: 1px solid var(--crm-ink); border-radius: 0; background: var(--crm-surface); color: var(--crm-ink); box-shadow: -10px 10px 0 var(--crm-ink); }
+.crm-modal-wide { width: min(1080px, calc(100% - 2rem)); }
 .crm-modal:not([open]) { display: none; }
 .crm-modal[open] { display: flex; flex-direction: column; }
 .crm-modal::backdrop { background: rgb(9 16 35 / 68%); backdrop-filter: blur(2px); }

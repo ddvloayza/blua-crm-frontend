@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { ArrowLeft, CalendarClock, CalendarPlus, Calculator, CheckCircle2, FilePlus2, Mail, MessageCircle, Phone, Send } from "lucide-react";
 import { useCrm } from "@/context/CrmContext";
 import { CrmModal } from "@/components/crm/CrmModal";
+import { ClientSimulationsModal } from "@/components/crm/ClientSimulationsModal";
 import { StatusBadge } from "@/components/crm/CrmUI";
 import {
   CrmLead, CRM_OUTCOME_LABELS, CRM_STATUS_LABELS, formatCrmDate,
@@ -49,6 +50,7 @@ export default function CrmLeadDetailPage() {
   const [activityError, setActivityError] = useState("");
   const [activityBusy, setActivityBusy] = useState(false);
   const [activeModal, setActiveModal] = useState<LeadModal>(null);
+  const [showClientSimulations, setShowClientSimulations] = useState(false);
   const [notice, setNotice] = useState("");
   const [noticeWarning, setNoticeWarning] = useState(false);
 
@@ -211,10 +213,10 @@ export default function CrmLeadDetailPage() {
             <div><div className="text-xs text-slate-500">Origen</div><div className="mt-1 text-sm font-semibold text-slate-800">{lead.source || "—"}</div></div>
             <div><div className="text-xs text-slate-500">Campaña</div><div className="mt-1 text-sm font-semibold text-slate-800">{lead.campaign || "—"}</div></div>
             <div><div className="text-xs text-slate-500">Asesor responsable</div><div className="mt-1 text-sm font-semibold text-slate-800">{lead.advisorEmail || "Sin asignar"}</div></div>
-            <div><div className="text-xs text-slate-500">Simulaciones del cliente</div><div className="mt-1 text-sm font-semibold text-slate-800">{lead.simulationsCount}</div></div>
+            <div><div className="text-xs text-slate-500">Simulaciones del cliente</div><button type="button" aria-haspopup="dialog" onClick={() => setShowClientSimulations(true)} disabled={!lead.simulationsCount} className="mt-1 inline-flex items-center gap-2 text-left text-sm font-semibold text-[#111111] underline underline-offset-2 hover:text-[#4A63E7] disabled:cursor-default disabled:no-underline disabled:hover:text-[#111111]">{lead.simulationsCount}{lead.simulationsCount > 0 && <span className="text-xs font-normal">Ver todas ↗</span>}</button></div>
           </div>
           <div className="mt-4 text-xs text-slate-600">Simulaciones del asesor: <strong>{lead.advisorSimulationsCount}</strong></div>
-          {latest && <div className="mt-5 border border-[#111111] bg-[#e2e8ff] p-4"><div className="text-xs font-semibold uppercase tracking-wider text-[#111111]">Última simulación del cliente</div><div className="mt-2 crm-section-title">{amount}</div><div className="mt-1 text-sm text-slate-600">{latest.fundPlanNameSnapshot || "Plan de inversión"} · {latest.termMonths} meses</div><div className="mt-1 text-xs text-slate-500">{formatCrmDate(latest.createdAt)}</div></div>}
+          {latest && <button type="button" aria-haspopup="dialog" onClick={() => setShowClientSimulations(true)} className="mt-5 block w-full border border-[#111111] bg-[#e2e8ff] p-4 text-left transition-colors hover:bg-[#d1fae5]"><div className="text-xs font-semibold uppercase tracking-wider text-[#111111]">Última simulación del cliente · Ver detalle ↗</div><div className="mt-2 crm-section-title">{amount}</div><div className="mt-1 text-sm text-slate-600">{latest.fundPlanNameSnapshot || "Plan de inversión"} · {latest.termMonths} meses</div><div className="mt-1 text-xs text-slate-500">{formatCrmDate(latest.createdAt)}</div></button>}
           <Link href={`/leads/${lead.uuid}/simulations`} className="crm-link mt-4 inline-flex items-center gap-2"><Calculator size={15} /> Ver simulaciones del asesor y cuadro de pagos</Link>
           {lead.notes && <div className="mt-5 border-t border-[#e5e7eb] pt-4"><div className="text-xs text-slate-500">Notas del prospecto</div><p className="mt-2 whitespace-pre-wrap text-sm text-slate-700">{lead.notes}</p></div>}
         </section>
@@ -271,6 +273,7 @@ export default function CrmLeadDetailPage() {
         {actor?.role === "ADMIN" && <div className="border border-[#111111] bg-[#e2e8ff] p-5 text-sm text-[#111111]">Vista de supervisión. El asesor asignado registra las gestiones de este prospecto.</div>}
       </div>
     </div>
+    {showClientSimulations && <ClientSimulationsModal leadId={lead.uuid} leadName={lead.fullName || lead.email || "Prospecto"} onClose={() => setShowClientSimulations(false)} />}
     {actor?.role === "ADVISOR" && lead.status !== "DO_NOT_CONTACT" && activeModal === "interaction" && <CrmModal title="Registrar gestión" description="Completa el resultado después de contactar al prospecto." busy={saving} onClose={() => setActiveModal(null)}>
       <form onSubmit={submit} className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
