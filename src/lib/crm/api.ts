@@ -23,6 +23,7 @@ export type CrmSimulationInstallment = {
   dueDate: string;
   interest: string;
   principal: string;
+  bonus: string;
   total: string;
 };
 export type CrmSimulation = {
@@ -33,7 +34,13 @@ export type CrmSimulation = {
   frequency: "MONTHLY" | "QUARTERLY";
   startDate: string;
   fundPlanNameSnapshot: string;
+  annualRatePercent: string;
+  periodRatePercent: string;
+  couponCodeSnapshot: string;
+  couponBenefitTypeSnapshot: string;
+  couponBenefitValueSnapshot: string | null;
   estimatedTotalInterest: string;
+  estimatedBonus: string;
   estimatedTotalReturn: string;
   createdAt: string;
   createdByEmail: string | null;
@@ -49,6 +56,8 @@ export type CrmSimulationPlan = {
   termMonths: number;
   minAmount: string;
   maxAmount: string | null;
+  annualRatePercent: string;
+  periodRatePercent: string;
 };
 
 export type CrmLead = {
@@ -190,13 +199,16 @@ export async function getCrmSimulationWorkspace(leadId: string): Promise<{
         uuid fullName email status
         advisorSimulations {
           uuid capitalAmount currency termMonths frequency startDate
-          fundPlanNameSnapshot estimatedTotalInterest estimatedTotalReturn
+          fundPlanNameSnapshot annualRatePercent periodRatePercent
+          couponCodeSnapshot couponBenefitTypeSnapshot couponBenefitValueSnapshot
+          estimatedTotalInterest estimatedBonus estimatedTotalReturn
           createdAt createdByEmail
-          schedule { number dueDate interest principal total }
+          schedule { number dueDate interest principal bonus total }
         }
       }
       simulationPlans {
         uuid fundId name fundName currency frequency termMonths minAmount maxAmount
+        annualRatePercent periodRatePercent
       }
     }
   }`, { leadId });
@@ -211,16 +223,19 @@ export async function createCrmSimulation(input: {
   frequency: "MONTHLY" | "QUARTERLY";
   termMonths: number;
   capitalAmount: string;
+  couponCode?: string;
   startDate: string;
 }): Promise<CrmSimulation> {
   const data = await request<{ createCrmSimulation: { simulation: CrmSimulation } }>(
-    `mutation CreateCrmSimulation($leadId: UUID!, $fundId: UUID!, $currency: String!, $frequency: String!, $termMonths: Int!, $capitalAmount: String!, $startDate: Date) {
-      createCrmSimulation(leadId: $leadId, fundId: $fundId, currency: $currency, frequency: $frequency, termMonths: $termMonths, capitalAmount: $capitalAmount, startDate: $startDate) {
+    `mutation CreateCrmSimulation($leadId: UUID!, $fundId: UUID!, $currency: String!, $frequency: String!, $termMonths: Int!, $capitalAmount: String!, $couponCode: String, $startDate: Date) {
+      createCrmSimulation(leadId: $leadId, fundId: $fundId, currency: $currency, frequency: $frequency, termMonths: $termMonths, capitalAmount: $capitalAmount, couponCode: $couponCode, startDate: $startDate) {
         simulation {
           uuid capitalAmount currency termMonths frequency startDate
-          fundPlanNameSnapshot estimatedTotalInterest estimatedTotalReturn
+          fundPlanNameSnapshot annualRatePercent periodRatePercent
+          couponCodeSnapshot couponBenefitTypeSnapshot couponBenefitValueSnapshot
+          estimatedTotalInterest estimatedBonus estimatedTotalReturn
           createdAt createdByEmail
-          schedule { number dueDate interest principal total }
+          schedule { number dueDate interest principal bonus total }
         }
       }
     }`, input
