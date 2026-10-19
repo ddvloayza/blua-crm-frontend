@@ -40,6 +40,11 @@ button:disabled { cursor: not-allowed; }
 .crm-field { border: 1px solid #6b7280; border-radius: 0; background: #ffffff; color: var(--crm-ink); outline: none; }
 .crm-field:focus { border-color: var(--crm-ink); box-shadow: 0 0 0 2px #a5b4fc; }
 .crm-field::placeholder { color: #6b7280; }
+.crm-phone-input:focus-within { border-color: var(--crm-ink); box-shadow: 0 0 0 2px #a5b4fc; }
+.crm-phone-input .PhoneInputInput { min-width: 0; height: 100%; border: 0; background: transparent; color: var(--crm-ink); outline: none; font-size: .875rem; }
+.crm-phone-input .PhoneInputInput::placeholder { color: #6b7280; }
+.crm-phone-input .PhoneInputCountry { margin-right: .75rem; }
+.crm-phone-input .PhoneInputCountrySelectArrow { color: var(--crm-ink); opacity: 1; }
 .crm-app :focus-visible, .crm-signin :focus-visible { outline: 2px solid var(--crm-blue); outline-offset: 2px; }
 .crm-app input[type="file"] { max-width: 100%; }
 .crm-signin-hero { background: linear-gradient(135deg, #3866f2 0%, #023373 100%); }

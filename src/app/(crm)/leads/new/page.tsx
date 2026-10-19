@@ -5,12 +5,14 @@ import { useState } from "react";
 import { ArrowLeft, ArrowRight, MessageCircle, UserPlus } from "lucide-react";
 import { useCrm } from "@/context/CrmContext";
 import { CrmLead, createCrmLead, whatsappPitchUrl } from "@/lib/crm/api";
+import PhoneInput, { parsePhoneNumber } from "react-phone-number-input";
+import flags from "react-phone-number-input/flags";
+import "react-phone-number-input/style.css";
 
 export default function NewCrmLeadPage() {
   const { actor } = useCrm();
   const [fullName, setFullName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [countryPrefix, setCountryPrefix] = useState("+51");
+  const [phone, setPhone] = useState<string | undefined>();
   const [email, setEmail] = useState("");
   const [notes, setNotes] = useState("");
   const [created, setCreated] = useState<CrmLead | null>(null);
@@ -19,13 +21,18 @@ export default function NewCrmLeadPage() {
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!phone.trim() && !email.trim()) {
+    if (!phone && !email.trim()) {
       setError("Ingresa al menos un teléfono o un correo.");
+      return;
+    }
+    const parsedPhone = phone ? parsePhoneNumber(phone) : undefined;
+    if (phone && !parsedPhone) {
+      setError("Revisa el número de teléfono y el país seleccionado.");
       return;
     }
     setSaving(true); setError("");
     try {
-      const lead = await createCrmLead({ fullName: fullName.trim(), phone: phone.trim(), countryPrefix: countryPrefix.trim(), email: email.trim(), notes: notes.trim() });
+      const lead = await createCrmLead({ fullName: fullName.trim(), phone: parsedPhone?.nationalNumber ?? "", countryPrefix: parsedPhone ? `+${parsedPhone.countryCallingCode}` : "", email: email.trim(), notes: notes.trim() });
       setCreated(lead);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "No se pudo crear el prospecto.");
@@ -48,8 +55,21 @@ export default function NewCrmLeadPage() {
     </section> : <form onSubmit={submit} className="crm-panel space-y-5 p-6">
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="sm:col-span-2 text-sm font-semibold">Nombre completo *<input required maxLength={160} value={fullName} onChange={(event) => setFullName(event.target.value)} className="mt-1.5 h-11 w-full crm-field px-3 font-normal" placeholder="Nombre del prospecto" /></label>
-        <label className="text-sm font-semibold">Prefijo<select value={countryPrefix} onChange={(event) => setCountryPrefix(event.target.value)} className="mt-1.5 h-11 w-full crm-field px-3 font-normal"><option value="+51">Perú (+51)</option><option value="+1">Estados Unidos (+1)</option><option value="+57">Colombia (+57)</option><option value="+56">Chile (+56)</option><option value="+52">México (+52)</option><option value="+34">España (+34)</option></select></label>
-        <label className="text-sm font-semibold">Teléfono<input type="tel" inputMode="tel" maxLength={25} value={phone} onChange={(event) => setPhone(event.target.value)} className="mt-1.5 h-11 w-full crm-field px-3 font-normal" placeholder="Sin el prefijo del país" /></label>
+        <div className="sm:col-span-2">
+          <label htmlFor="lead-phone" className="text-sm font-semibold">Teléfono</label>
+          <PhoneInput
+            id="lead-phone"
+            international
+            defaultCountry="PE"
+            countryCallingCodeEditable={false}
+            flags={flags}
+            value={phone}
+            onChange={setPhone}
+            countrySelectProps={{ "aria-label": "País y prefijo telefónico" }}
+            placeholder="Número de teléfono"
+            className="crm-phone-input crm-field mt-1.5 h-11 w-full px-3 font-normal"
+          />
+        </div>
         <label className="sm:col-span-2 text-sm font-semibold">Correo<input type="email" maxLength={254} value={email} onChange={(event) => setEmail(event.target.value)} className="mt-1.5 h-11 w-full crm-field px-3 font-normal" placeholder="cliente@ejemplo.com" /></label>
         <label className="sm:col-span-2 text-sm font-semibold">Notas iniciales<textarea rows={4} maxLength={5000} value={notes} onChange={(event) => setNotes(event.target.value)} className="mt-1.5 w-full crm-field p-3 font-normal" placeholder="Contexto de cómo conociste al prospecto" /></label>
       </div>
