@@ -124,6 +124,24 @@ export async function getCrmLead(id: string): Promise<CrmLead | null> {
   return data.crm.lead;
 }
 
+export async function createCrmLead(input: {
+  fullName: string;
+  email?: string;
+  phone?: string;
+  countryPrefix?: string;
+  notes?: string;
+}): Promise<CrmLead> {
+  const data = await request<{ createCrmLead: { lead: CrmLead } }>(
+    `mutation CreateCrmLead($fullName: String!, $email: String, $phone: String, $countryPrefix: String, $notes: String) {
+      createCrmLead(fullName: $fullName, email: $email, phone: $phone, countryPrefix: $countryPrefix, notes: $notes) {
+        lead { ${leadFields} }
+      }
+    }`,
+    input
+  );
+  return data.createCrmLead.lead;
+}
+
 export async function getCrmDashboard(advisorId?: string): Promise<CrmDashboard> {
   const data = await request<{ crm: { dashboard: CrmDashboard } }>(
     `query CrmDashboard($advisorId: UUID) {
@@ -294,4 +312,14 @@ export async function assignCrmLead(leadId: string, advisorId: string, reason: s
   await request(`mutation($leadId: UUID!, $advisorId: UUID!, $reason: String) {
     assignCrmLead(leadId: $leadId, advisorId: $advisorId, reason: $reason) { lead { uuid advisorEmail } }
   }`, { leadId, advisorId, reason });
+}
+
+export function whatsappPitchUrl(lead: Pick<CrmLead, "fullName" | "phone" | "countryPrefix">, advisorName: string | undefined): string | null {
+  const url = whatsappUrl(lead);
+  if (!url) return null;
+  const firstName = lead.fullName.trim().split(/\s+/)[0];
+  const greeting = firstName ? `Hola ${firstName},` : "Hola,";
+  const sender = advisorName?.trim() || "un asesor";
+  const pitch = `${greeting} soy ${sender} de Blua Investments. Me gustaría conocer tus objetivos de inversión y compartirte alternativas que podrían ajustarse a lo que buscas. ¿Podemos conversar por aquí?`;
+  return `${url}?text=${encodeURIComponent(pitch)}`;
 }

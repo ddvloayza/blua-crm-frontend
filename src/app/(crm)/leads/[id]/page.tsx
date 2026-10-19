@@ -9,7 +9,7 @@ import { CrmModal } from "@/components/crm/CrmModal";
 import { StatusBadge } from "@/components/crm/CrmUI";
 import {
   CrmLead, CRM_OUTCOME_LABELS, CRM_STATUS_LABELS, formatCrmDate,
-  getCrmLead, recordCrmInteraction, whatsappUrl, uploadCrmAttachment,
+  getCrmLead, recordCrmInteraction, whatsappPitchUrl, uploadCrmAttachment,
   crmAttachmentUrl, createCrmAppointment, updateCrmAppointment,
   createCrmProposal, updateCrmProposal,
 } from "@/lib/crm/api";
@@ -165,7 +165,7 @@ export default function CrmLeadDetailPage() {
   if (loading) return <div className="crm-panel p-8 text-sm text-slate-500">Cargando ficha del prospecto…</div>;
   if (loadError || !lead) return <div className="crm-panel p-8"><p className="text-sm text-slate-600">{loadError || "No tienes acceso a este prospecto o ya no existe."}</p><Link href="/leads" className="mt-4 inline-block text-sm font-semibold text-[#111111]">Volver a prospectos</Link></div>;
 
-  const whatsapp = lead.status !== "DO_NOT_CONTACT" ? whatsappUrl(lead) : null;
+  const whatsapp = actor?.role === "ADVISOR" && lead.status !== "DO_NOT_CONTACT" ? whatsappPitchUrl(lead, actor.name) : null;
   const latest = lead.latestSimulation;
   const amount = latest ? new Intl.NumberFormat("es-PE", { style: "currency", currency: latest.currency }).format(Number(latest.capitalAmount)) : "—";
 
@@ -194,7 +194,7 @@ export default function CrmLeadDetailPage() {
             <div className="border border-[#111111] bg-[#eef2ff] p-4"><div className="flex items-center gap-2 text-xs font-medium text-slate-500"><Mail size={15} /> Correo</div><div className="mt-2 break-all text-sm font-semibold text-slate-800">{lead.email || "No registrado"}</div></div>
           </div>
           <div className="mt-5 flex flex-wrap gap-3">
-            {whatsapp && <a href={whatsapp} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 crm-button crm-button-green"><MessageCircle size={17} /> Abrir WhatsApp</a>}
+            {whatsapp && <a href={whatsapp} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 crm-button crm-button-green"><MessageCircle size={17} /> Contactar por WhatsApp</a>}
             {lead.email && lead.status !== "DO_NOT_CONTACT" && <a href={`mailto:${lead.email}`} className="inline-flex items-center gap-2 crm-button crm-button-secondary"><Mail size={17} /> Enviar correo</a>}
             {lead.phone && lead.status !== "DO_NOT_CONTACT" && <a href={`tel:${lead.countryPrefix}${lead.phone}`} className="inline-flex items-center gap-2 crm-button crm-button-secondary"><Phone size={17} /> Llamar</a>}
           </div>
