@@ -70,3 +70,13 @@ button:disabled { cursor: not-allowed; }
   .crm-button, .crm-panel, .crm-signin-hero { transition: none; }
   .crm-panel:hover, .crm-signin-hero:hover { transform: none; }
 }
+
+@media print {
+  body, .crm-app { background: #fff !important; }
+  .crm-app aside, .crm-app header, .crm-app > div > div:first-child, .crm-print-hide { display: none !important; }
+  .crm-app > div { padding-left: 0 !important; }
+  .crm-app main { max-width: none; padding: 0 !important; }
+  .crm-simulation-print { border: 0; padding: 0 !important; transform: none !important; box-shadow: none !important; }
+  .crm-simulation-print table { break-inside: auto; }
+  .crm-simulation-print tr { break-inside: avoid; }
+}

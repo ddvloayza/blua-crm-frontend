@@ -17,3 +17,9 @@ Después de publicar, agrega el dominio `crm.blua.pe` a esta app de Amplify. El 
 ## Acceso
 
 Las cuentas reciben el rol mediante los grupos de Django `CRM Asesores` y `CRM Administradores`. El dashboard de asesores muestra los leads asignados; el administrador ve el avance del equipo y el funnel. Desde Supervisión puede descargar un `.xlsx` con el resumen, el progreso por asesor y la distribución de prospectos por estado. La exportación refleja el filtro de asesor seleccionado y la fecha de corte; es una fotografía de los datos actuales. La ficha permite registrar gestiones, citas, propuestas y adjuntos.
+
+## Simulaciones comerciales
+
+En la ficha de un prospecto asignado, **Simular inversión** permite elegir un plan activo, moneda, frecuencia mensual o trimestral, monto y fecha estimada de inicio. Django calcula y guarda la simulación en `InvestmentSimulation` con el lead y el asesor creador. El cuadro muestra intereses brutos estimados por período y la devolución del capital al vencimiento. Se puede imprimir o guardar como PDF desde el navegador. Es una proyección referencial; no emite un contrato ni considera retenciones, comisiones o días no hábiles.
+
+Antes de usar esta pantalla en un nuevo entorno, aplica las migraciones del backend (`investment.0010` y `crm.0010`) para añadir el creador y los permisos de los grupos CRM.

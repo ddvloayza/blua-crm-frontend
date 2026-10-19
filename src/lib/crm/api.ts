@@ -18,6 +18,38 @@ export type CrmInteraction = {
 export type CrmAttachment = { uuid: string; filename: string; contentType: string; size: number };
 export type CrmAppointment = { uuid: string; scheduledAt: string; status: string; notes: string; advisorEmail: string };
 export type CrmProposal = { uuid: string; amount: string; currency: string; termMonths: number | null; validUntil: string | null; status: string; notes: string; createdAt: string; advisorEmail: string; attachments: CrmAttachment[] };
+export type CrmSimulationInstallment = {
+  number: number;
+  dueDate: string;
+  interest: string;
+  principal: string;
+  total: string;
+};
+export type CrmSimulation = {
+  uuid: string;
+  capitalAmount: string;
+  currency: string;
+  termMonths: number;
+  frequency: "MONTHLY" | "QUARTERLY";
+  startDate: string;
+  fundPlanNameSnapshot: string;
+  estimatedTotalInterest: string;
+  estimatedTotalReturn: string;
+  createdAt: string;
+  createdByEmail: string | null;
+  schedule: CrmSimulationInstallment[];
+};
+export type CrmSimulationPlan = {
+  uuid: string;
+  name: string;
+  fundName: string;
+  currency: string;
+  frequency: "MONTHLY" | "QUARTERLY";
+  termMonths: number;
+  minAmount: string;
+  maxAmount: string | null;
+};
+
 export type CrmLead = {
   uuid: string;
   fullName: string;
@@ -140,6 +172,55 @@ export async function createCrmLead(input: {
     input
   );
   return data.createCrmLead.lead;
+}
+
+export async function getCrmSimulationWorkspace(leadId: string): Promise<{
+  lead: Pick<CrmLead, "uuid" | "fullName" | "email" | "status"> | null;
+  plans: CrmSimulationPlan[];
+  simulations: CrmSimulation[];
+}> {
+  const data = await request<{ crm: {
+    lead: (Pick<CrmLead, "uuid" | "fullName" | "email" | "status"> & { simulations: CrmSimulation[] }) | null;
+    simulationPlans: CrmSimulationPlan[];
+  } }>(`query CrmSimulationWorkspace($leadId: UUID!) {
+    crm {
+      lead(id: $leadId) {
+        uuid fullName email status
+        simulations {
+          uuid capitalAmount currency termMonths frequency startDate
+          fundPlanNameSnapshot estimatedTotalInterest estimatedTotalReturn
+          createdAt createdByEmail
+          schedule { number dueDate interest principal total }
+        }
+      }
+      simulationPlans {
+        uuid name fundName currency frequency termMonths minAmount maxAmount
+      }
+    }
+  }`, { leadId });
+  const { lead, simulationPlans } = data.crm;
+  return { lead, plans: simulationPlans, simulations: lead?.simulations ?? [] };
+}
+
+export async function createCrmSimulation(input: {
+  leadId: string;
+  planId: string;
+  capitalAmount: string;
+  startDate: string;
+}): Promise<CrmSimulation> {
+  const data = await request<{ createCrmSimulation: { simulation: CrmSimulation } }>(
+    `mutation CreateCrmSimulation($leadId: UUID!, $planId: UUID!, $capitalAmount: String!, $startDate: Date) {
+      createCrmSimulation(leadId: $leadId, planId: $planId, capitalAmount: $capitalAmount, startDate: $startDate) {
+        simulation {
+          uuid capitalAmount currency termMonths frequency startDate
+          fundPlanNameSnapshot estimatedTotalInterest estimatedTotalReturn
+          createdAt createdByEmail
+          schedule { number dueDate interest principal total }
+        }
+      }
+    }`, input
+  );
+  return data.createCrmSimulation.simulation;
 }
 
 export async function getCrmDashboard(advisorId?: string): Promise<CrmDashboard> {

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { ArrowLeft, CalendarClock, CalendarPlus, CheckCircle2, FilePlus2, Mail, MessageCircle, Phone, Send } from "lucide-react";
+import { ArrowLeft, CalendarClock, CalendarPlus, Calculator, CheckCircle2, FilePlus2, Mail, MessageCircle, Phone, Send } from "lucide-react";
 import { useCrm } from "@/context/CrmContext";
 import { CrmModal } from "@/components/crm/CrmModal";
 import { StatusBadge } from "@/components/crm/CrmUI";
@@ -180,6 +180,7 @@ export default function CrmLeadDetailPage() {
         <button type="button" aria-haspopup="dialog" onClick={() => openModal("interaction")} className="inline-flex items-center gap-2 crm-button"><Send size={16} /> Registrar gestión</button>
         <button type="button" aria-haspopup="dialog" onClick={() => openModal("appointment")} className="inline-flex items-center gap-2 crm-button crm-button-secondary"><CalendarPlus size={16} /> Programar cita</button>
         <button type="button" aria-haspopup="dialog" onClick={() => openModal("proposal")} className="inline-flex items-center gap-2 crm-button crm-button-secondary"><FilePlus2 size={16} /> Crear propuesta</button>
+        <Link href={`/leads/${lead.uuid}/simulations`} className="inline-flex items-center gap-2 crm-button crm-button-secondary"><Calculator size={16} /> Simular inversión</Link>
       </div>}
     </div>
     {notice && <div role="status" className={`flex items-start gap-2 border border-[#111111] p-4 text-sm ${noticeWarning ? "bg-[#fef3c7] text-amber-900" : "bg-[#d1fae5] text-emerald-800"}`}><CheckCircle2 size={18} className="shrink-0" />{notice}</div>}
@@ -210,6 +211,7 @@ export default function CrmLeadDetailPage() {
             <div><div className="text-xs text-slate-500">Simulaciones</div><div className="mt-1 text-sm font-semibold text-slate-800">{lead.simulationsCount}</div></div>
           </div>
           {latest && <div className="mt-5 border border-[#111111] bg-[#e2e8ff] p-4"><div className="text-xs font-semibold uppercase tracking-wider text-[#111111]">Última simulación</div><div className="mt-2 crm-section-title">{amount}</div><div className="mt-1 text-sm text-slate-600">{latest.fundPlanNameSnapshot || "Plan de inversión"} · {latest.termMonths} meses</div><div className="mt-1 text-xs text-slate-500">{formatCrmDate(latest.createdAt)}</div></div>}
+          <Link href={`/leads/${lead.uuid}/simulations`} className="crm-link mt-4 inline-flex items-center gap-2"><Calculator size={15} /> Ver simulaciones y cuadro de pagos</Link>
           {lead.notes && <div className="mt-5 border-t border-[#e5e7eb] pt-4"><div className="text-xs text-slate-500">Notas del prospecto</div><p className="mt-2 whitespace-pre-wrap text-sm text-slate-700">{lead.notes}</p></div>}
         </section>
 
