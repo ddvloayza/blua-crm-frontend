@@ -35,6 +35,7 @@ export type CrmSimulation = {
   startDate: string;
   fundPlanNameSnapshot: string;
   annualRatePercent: string;
+  appliedAnnualRatePercent: string;
   periodRatePercent: string;
   couponCodeSnapshot: string;
   couponBenefitTypeSnapshot: string;
@@ -199,7 +200,7 @@ export async function getCrmSimulationWorkspace(leadId: string): Promise<{
         uuid fullName email status
         advisorSimulations {
           uuid capitalAmount currency termMonths frequency startDate
-          fundPlanNameSnapshot annualRatePercent periodRatePercent
+          fundPlanNameSnapshot annualRatePercent appliedAnnualRatePercent periodRatePercent
           couponCodeSnapshot couponBenefitTypeSnapshot couponBenefitValueSnapshot
           estimatedTotalInterest estimatedBonus estimatedTotalReturn
           createdAt createdByEmail
@@ -231,7 +232,7 @@ export async function createCrmSimulation(input: {
       createCrmSimulation(leadId: $leadId, fundId: $fundId, currency: $currency, frequency: $frequency, termMonths: $termMonths, capitalAmount: $capitalAmount, couponCode: $couponCode, startDate: $startDate) {
         simulation {
           uuid capitalAmount currency termMonths frequency startDate
-          fundPlanNameSnapshot annualRatePercent periodRatePercent
+          fundPlanNameSnapshot annualRatePercent appliedAnnualRatePercent periodRatePercent
           couponCodeSnapshot couponBenefitTypeSnapshot couponBenefitValueSnapshot
           estimatedTotalInterest estimatedBonus estimatedTotalReturn
           createdAt createdByEmail
